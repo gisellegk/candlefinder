@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(candlefinder)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
-# add_definitions(-std=c++11)
+ add_definitions(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -12,11 +12,6 @@ find_package(catkin REQUIRED roscpp geometry_msgs)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
-
-## Uncomment this if the package has a setup.py. This macro ensures
-## modules and global scripts declared therein get installed
-## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -113,6 +108,11 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 
+include($ENV{ROS_ROOT}/core/rosbuild/FindPkgConfig.cmake)
+pkg_check_modules(OPENCV REQUIRED opencv)
+include_directories(${OPENCV_INCLUDE_DIRS})
+link_directories(${OPENCV_LIBRARY_DIRS})
+
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/candlefinder.cpp
@@ -145,6 +145,7 @@ add_executable(opencv_node src/opencv_node.cpp)
 target_link_libraries(opencv_node
   ${catkin_LIBRARIES}
 )
+target_link_libraries(opencv_node ${OPENCV_LIBRARIES})
 
 #############
 ## Install ##

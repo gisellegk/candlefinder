@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include "opencv2/opencv.hpp"
+#include <geometry_msgs/Point.h>
 
 #define CAMERAINTERFACE 0
 
