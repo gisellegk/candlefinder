@@ -8,7 +8,7 @@ project(rostutorial)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 
-find_package(catkin REQUIRED COMPONENTS roscpp geometry_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp geometry_msgs turtlesim)
 
 
 
@@ -133,6 +133,7 @@ catkin_package(
 
 add_executable(hello src/hello.cpp)
 add_executable(random src/pubvel.cpp)
+add_executable(readpose src/readpose.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -149,6 +150,7 @@ add_executable(random src/pubvel.cpp)
    ${catkin_LIBRARIES}
  )
  target_link_libraries(random ${catkin_LIBRARIES})
+ target_link_libraries(readpose ${catkin_LIBRARIES})
 
 #############
 ## Install ##
