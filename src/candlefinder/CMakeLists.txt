@@ -129,6 +129,7 @@ link_directories(${OPENCV_LIBRARY_DIRS})
 # add_executable(${PROJECT_NAME}_node src/candlefinder_node.cpp)
 
 add_executable(opencv_node src/opencv_node.cpp)
+add_executable(robot_teleop src/robot_teleop.cpp)
 
 
 ## Rename C++ executable without prefix
@@ -146,7 +147,7 @@ target_link_libraries(opencv_node
   ${catkin_LIBRARIES}
 )
 target_link_libraries(opencv_node ${OPENCV_LIBRARIES})
-
+target_link_libraries(robot_teleop ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############

@@ -38,6 +38,7 @@ void drive( const geometry_msgs::Twist& msg){
       Serial.println("angle = current angle");
     }
   }
+  stepperOff();
   //read x linear for speed & f/b
   analogWrite(ENABLE, abs(msg.linear.x)*255); //x will be betweeen -1 and 1, should multiply by 255 or something?
   Serial.println("Speed: " + (long)msg.linear.x);
@@ -59,6 +60,7 @@ ros::Publisher pub("base_pose", &twist_msg);
 void setup()
 {
   pinMode(HOME, INPUT);
+  digitalWrite(HOME, HIGH);
   pinMode(ENABLE, OUTPUT);
   pinMode(FORWARD, OUTPUT);
   pinMode(BACKWARD, OUTPUT);
@@ -72,6 +74,8 @@ void setup()
   nh.subscribe(sub);
   
   Serial.begin(9600);
+  
+  findHome();
 }
 
 void loop()
@@ -107,6 +111,7 @@ void turnCW(){
   currentAngle--;
   if(currentAngle < 0) currentAngle = STEPS_PER_ROTATION - 1;
 }
+
 void turnCCW(){ 
   
   digitalWrite(STEP1, LOW);
@@ -132,12 +137,19 @@ void turnCCW(){
   currentAngle++ % STEPS_PER_ROTATION;
 }
 
+void stepperOff(){
+  digitalWrite(STEP1, LOW);
+  digitalWrite(STEP2, LOW);
+  digitalWrite(STEP3, LOW);
+  digitalWrite(STEP4, LOW);
+}
 
 void findHome(){
   Serial.println("Finding home...");
-  while(!digitalRead(HOME)){
+  while(digitalRead(HOME)){
     turnCW();
   }
   Serial.println("Done!");
+  stepperOff();
   currentAngle = 0;
 }
