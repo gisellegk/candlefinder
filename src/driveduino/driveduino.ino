@@ -20,14 +20,15 @@ const int STEPS_PER_ROTATION = 2048/4; // steps per rotation
 
 int stepperPosition = 0;
 int currentAngle = 0;
+int targetAngle = 0;
 int currentSpeed = 0;
 
-void drive(const geometry_msgs::Twist&);
+void receiveMessage(const geometry_msgs::Twist&);
 
 
 ros::NodeHandle  nh;
 
-ros::Subscriber<geometry_msgs::Twist> sub("drive_vector", drive );
+ros::Subscriber<geometry_msgs::Twist> sub("drive_vector", receiveMessage );
 
 geometry_msgs::Twist twist_msg;
 ros::Publisher pub("base_pose", &twist_msg);
@@ -39,34 +40,10 @@ void debugPrint(String str) {
   chatter.publish(&str_msg);
 }
 
-//Angle should be in "steps"
-void drive( const geometry_msgs::Twist& msg){
-  int angle = (int)msg.angular.z % STEPS_PER_ROTATION;
-  //turn to angle
-  for(int i = 0; angle - currentAngle != 0; i++) {
-    //Serial.println((String)"current: " + currentAngle + (String)" target: " + angle);
-    debugPrint("turning " + String(angle) + ", " + String(currentAngle));
-    if(angle > currentAngle) {
-      turnCCW();
-    } else if(angle < currentAngle) {
-      turnCW();
-    } else {
-      //why are you turning
-      //Serial.println("angle = current angle");
-    }
-  }
-  stepperOff();
-  //read x linear for speed & f/b
-  analogWrite(ENABLE, abs(msg.linear.x)*255); //x will be betweeen -1 and 1, should multiply by 255 or something?
-  //Serial.println("Speed: " + (long)msg.linear.x);
-  debugPrint("drive speed");
-  if(msg.linear.x >= 0) { //positive =  forward
-    digitalWrite(FORWARD, HIGH);
-    digitalWrite(BACKWARD, LOW);
-  } else {
-    digitalWrite(FORWARD, LOW);
-    digitalWrite(BACKWARD, HIGH);
-  }
+//Angle should be 0 - 360, try to deal with fringe cases
+void receiveMessage( const geometry_msgs::Twist& msg){
+  // this converts degrees to steps. does not deal with negative angles. try getting rid of mod and using the full double value?
+  targetAngle = ((int)msg.angular.z % 360)*STEPS_PER_ROTATION/360);
   currentSpeed = msg.linear.x;
 }
 
@@ -94,6 +71,15 @@ void setup()
 
 void loop()
 {
+  if(currentAngle == targetAngle) {
+    drive(currentSpeed);
+  } else {
+    if(angle > currentAngle) {
+      turnCCW();
+    } else { //if(angle < currentAngle)
+      turnCW();
+    }
+  }
   twist_msg.linear.x = currentSpeed;
   twist_msg.angular.z = currentAngle;
   pub.publish( &twist_msg );
@@ -167,4 +153,17 @@ void findHome(){
   debugPrint("Done!");
   stepperOff();
   currentAngle = 0;
+}
+
+void drive(double spd){
+  debugPrint("drive");
+  if(spd >= 0) { //positive =  forward
+    digitalWrite(FORWARD, HIGH);
+    digitalWrite(BACKWARD, LOW);
+  } else {
+    digitalWrite(FORWARD, LOW);
+    digitalWrite(BACKWARD, HIGH);
+  }
+  analogWrite(ENABLE, abs(spd)*255);
+
 }
