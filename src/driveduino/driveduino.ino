@@ -1,5 +1,6 @@
 #include <ros.h>
 #include <geometry_msgs/Twist.h>
+#include <std_msgs/String.h>
 
 /* Pins for L298N Motor Controller (drive wheels - f/b, speed) */
 #define ENABLE 3 //PWM
@@ -14,34 +15,51 @@
 
 #define HOME 10
 
-const long DELAY = 15;
-const int STEPS_PER_ROTATION = 360; // steps per rotation
+const long DELAY = 2;
+const int STEPS_PER_ROTATION = 2048/4; // steps per rotation
 
 int stepperPosition = 0;
 int currentAngle = 0;
 int currentSpeed = 0;
 
+void drive(const geometry_msgs::Twist&);
+
+
 ros::NodeHandle  nh;
+
+ros::Subscriber<geometry_msgs::Twist> sub("drive_vector", drive );
+
+geometry_msgs::Twist twist_msg;
+ros::Publisher pub("base_pose", &twist_msg);
+std_msgs::String str_msg;
+ros::Publisher chatter("chatter", &str_msg);
+
+void debugPrint(String str) {
+  str_msg.data = str.c_str();
+  chatter.publish(&str_msg);
+}
 
 //Angle should be in "steps"
 void drive( const geometry_msgs::Twist& msg){
   int angle = (int)msg.angular.z % STEPS_PER_ROTATION;
   //turn to angle
   for(int i = 0; angle - currentAngle != 0; i++) {
-    Serial.println((String)"current: " + currentAngle + (String)" target: " + angle);
-    if(msg.angular.z > currentAngle) {
+    //Serial.println((String)"current: " + currentAngle + (String)" target: " + angle);
+    debugPrint("turning " + String(angle) + ", " + String(currentAngle));
+    if(angle > currentAngle) {
       turnCCW();
     } else if(angle < currentAngle) {
       turnCW();
     } else {
       //why are you turning
-      Serial.println("angle = current angle");
+      //Serial.println("angle = current angle");
     }
   }
   stepperOff();
   //read x linear for speed & f/b
   analogWrite(ENABLE, abs(msg.linear.x)*255); //x will be betweeen -1 and 1, should multiply by 255 or something?
-  Serial.println("Speed: " + (long)msg.linear.x);
+  //Serial.println("Speed: " + (long)msg.linear.x);
+  debugPrint("drive speed");
   if(msg.linear.x >= 0) { //positive =  forward
     digitalWrite(FORWARD, HIGH);
     digitalWrite(BACKWARD, LOW);
@@ -51,11 +69,6 @@ void drive( const geometry_msgs::Twist& msg){
   }
   currentSpeed = msg.linear.x;
 }
-
-ros::Subscriber<geometry_msgs::Twist> sub("drive_vector", drive );
-
-geometry_msgs::Twist twist_msg;
-ros::Publisher pub("base_pose", &twist_msg);
 
 void setup()
 {
@@ -71,9 +84,10 @@ void setup()
 
   nh.initNode();
   nh.advertise(pub);
+  nh.advertise(chatter);
   nh.subscribe(sub);
   
-  Serial.begin(9600);
+  //Serial.begin(9600);
   
   findHome();
 }
@@ -134,7 +148,7 @@ void turnCCW(){
   digitalWrite(STEP3, HIGH);
   digitalWrite(STEP4, HIGH);
   delay(DELAY);
-  currentAngle++ % STEPS_PER_ROTATION;
+  currentAngle = (currentAngle + 1) % STEPS_PER_ROTATION;
 }
 
 void stepperOff(){
@@ -142,14 +156,15 @@ void stepperOff(){
   digitalWrite(STEP2, LOW);
   digitalWrite(STEP3, LOW);
   digitalWrite(STEP4, LOW);
+  debugPrint("stepper off");
 }
 
 void findHome(){
-  Serial.println("Finding home...");
-  while(digitalRead(HOME)){
+  debugPrint("Finding home...");
+  while(!digitalRead(HOME)){
     turnCW();
   }
-  Serial.println("Done!");
+  debugPrint("Done!");
   stepperOff();
   currentAngle = 0;
 }

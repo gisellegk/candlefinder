@@ -9,6 +9,7 @@
 #define KEYCODE_U 0x41
 #define KEYCODE_D 0x42
 #define KEYCODE_Q 0x71
+#define KEYCODE_SPACE
 
 /*Directly based off of TeleopTurtle*/
 class TeleopRobot
@@ -99,24 +100,29 @@ void TeleopRobot::keyLoop()
     {
       case KEYCODE_L:
         ROS_DEBUG("LEFT");
-        angular_ = 1.0;
+        angular_ = 180;
         dirty = true;
         break;
       case KEYCODE_R:
         ROS_DEBUG("RIGHT");
-        angular_ = -1.0;
+        angular_ = 0;
         dirty = true;
         break;
       case KEYCODE_U:
         ROS_DEBUG("UP");
-        linear_ = 1.0;
+        angular_ = 90;
         dirty = true;
         break;
       case KEYCODE_D:
         ROS_DEBUG("DOWN");
-        linear_ = -1.0;
+        angular_ = -1.0;
         dirty = true;
         break;
+     case KEYCODE_SPACE:
+	ROS_DEBUG("DRIVE");
+	linear_ = 1.0;
+	dirty=true;
+	break;
     }
    
 
