@@ -9,7 +9,6 @@
 #define KEYCODE_U 0x41
 #define KEYCODE_D 0x42
 #define KEYCODE_Q 0x71
-#define KEYCODE_SPACE
 
 /*Directly based off of TeleopTurtle*/
 class TeleopRobot
@@ -30,8 +29,8 @@ private:
 TeleopRobot::TeleopRobot():
   linear_(0),
   angular_(0),
-  l_scale_(2.0),
-  a_scale_(2.0)
+  l_scale_(1.0),
+  a_scale_(1.0)
 {
   nh_.param("scale_angular", a_scale_, a_scale_);
   nh_.param("scale_linear", l_scale_, l_scale_);
@@ -93,34 +92,37 @@ void TeleopRobot::keyLoop()
       exit(-1);
     }
 
-    linear_=angular_=0;
     ROS_DEBUG("value: 0x%02X\n", c);
   
     switch(c)
     {
       case KEYCODE_L:
         ROS_DEBUG("LEFT");
-        angular_ = 180;
+        angular_ = 90;
+	linear_ = .5;
         dirty = true;
         break;
       case KEYCODE_R:
         ROS_DEBUG("RIGHT");
-        angular_ = 0;
+	angular_= 90;
+        linear_ = -.5;
         dirty = true;
         break;
       case KEYCODE_U:
         ROS_DEBUG("UP");
-        angular_ = 90;
+        angular_ = 0;
+	linear_=.5;
         dirty = true;
         break;
       case KEYCODE_D:
         ROS_DEBUG("DOWN");
-        angular_ = -1.0;
+	angular_= 0;
+        linear_ =-.5;
         dirty = true;
         break;
-     case KEYCODE_SPACE:
+     case KEYCODE_Q:
 	ROS_DEBUG("DRIVE");
-	linear_ = 1.0;
+	linear_ = 0;
 	dirty=true;
 	break;
     }

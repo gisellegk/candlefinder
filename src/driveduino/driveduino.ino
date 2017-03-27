@@ -3,17 +3,17 @@
 #include <std_msgs/String.h>
 
 /* Pins for L298N Motor Controller (drive wheels - f/b, speed) */
-#define ENABLE 3 //PWM
-#define FORWARD 4
-#define BACKWARD 5
+#define ENABLE 9 //PWM
+#define FORWARD 10
+#define BACKWARD 11
 
 /* Pins for Stepper Motor Controller (drive angle)*/
-#define STEP1 6
-#define STEP2 7
-#define STEP3 8
-#define STEP4 9
+#define STEP1 2
+#define STEP2 3
+#define STEP3 4
+#define STEP4 5
 
-#define HOME 10
+#define HOME 8
 
 const long DELAY = 2;
 const int STEPS_PER_ROTATION = 2048/4; // steps per rotation
@@ -21,7 +21,7 @@ const int STEPS_PER_ROTATION = 2048/4; // steps per rotation
 int stepperPosition = 0;
 int currentAngle = 0;
 int targetAngle = 0;
-int currentSpeed = 0;
+double currentSpeed = 0;
 
 void receiveMessage(const geometry_msgs::Twist&);
 
@@ -43,7 +43,7 @@ void debugPrint(String str) {
 //Angle should be 0 - 360, try to deal with fringe cases
 void receiveMessage( const geometry_msgs::Twist& msg){
   // this converts degrees to steps. does not deal with negative angles. try getting rid of mod and using the full double value?
-  targetAngle = ((int)msg.angular.z % 360)*STEPS_PER_ROTATION/360);
+  targetAngle = ((int)msg.angular.z % 360)/360.0*STEPS_PER_ROTATION;
   currentSpeed = msg.linear.x;
 }
 
@@ -72,11 +72,13 @@ void setup()
 void loop()
 {
   if(currentAngle == targetAngle) {
+    stepperOff();
     drive(currentSpeed);
   } else {
-    if(angle > currentAngle) {
+    drive(0);
+    if(targetAngle > currentAngle) {
       turnCCW();
-    } else { //if(angle < currentAngle)
+    } else { //if(targetAngle < currentAngle)
       turnCW();
     }
   }
@@ -84,7 +86,7 @@ void loop()
   twist_msg.angular.z = currentAngle;
   pub.publish( &twist_msg );
   nh.spinOnce();
-  delay(500);
+  delay(00);
 }
 
 void turnCW(){
@@ -147,7 +149,7 @@ void stepperOff(){
 
 void findHome(){
   debugPrint("Finding home...");
-  while(!digitalRead(HOME)){
+  while(digitalRead(HOME)){
     turnCW();
   }
   debugPrint("Done!");
@@ -164,6 +166,6 @@ void drive(double spd){
     digitalWrite(FORWARD, LOW);
     digitalWrite(BACKWARD, HIGH);
   }
-  analogWrite(ENABLE, abs(spd)*255);
+  analogWrite(ENABLE, abs(spd)*100); //max speed = *255
 
 }

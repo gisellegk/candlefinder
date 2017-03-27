@@ -1,5 +1,5 @@
 #include <ros.h>
-#include <std_msgs/bool.h>
+#include <std_msgs/Bool.h>
 #include <std_msgs/String.h>
 
 //#define CHATTER
