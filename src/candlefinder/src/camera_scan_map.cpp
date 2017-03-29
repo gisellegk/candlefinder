@@ -51,6 +51,6 @@ void savePose(const geometry_msgs::PoseStamped& msg){
 
   float x = (pose.position.y / info.resolution) + (info.height/2.0);
   float y = ((pose.position.x+1) / info.resolution) + (info.width/2.0);
-  robot_row = (int)(sqrt(x^2+y^2)*cos(atan(y/x)+angle));
-  robot_col = (int)(sqrt(x^2+y^2)*sin(atan(y/x)+angle));
+  robot_row = (int)(sqrt(pow(x,2)+pow(y,2))*cos(atan(y/x)+angle));
+  robot_col = (int)(sqrt(pow(x,2)+pow(y,2))*sin(atan(y/x)+angle));
 }
