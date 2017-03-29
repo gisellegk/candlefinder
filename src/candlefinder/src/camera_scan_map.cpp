@@ -47,8 +47,12 @@ void saveMap(const nav_msgs::OccupancyGrid& msg){
 
 void savePose(const geometry_msgs::PoseStamped& msg){
   pose = msg.pose;
-  double angle = asin(-2.0*(pose.orientation.x*pose.orientation.z - pose.orientation.w*pose.orientation.y));
-  ROS_INFO_STREAM(angle);
+  double pitch = asin(-2.0*(pose.orientation.x*pose.orientation.z - pose.orientation.w*pose.orientation.y));
+  double yaw = var yaw = atan2(2.0*(pose.orientation.y*pose.orientation.z + pose.orientation.w*pose.orientation.x), pose.orientation.w*pose.orientation.w - pose.orientation.x*pose.orientation.x - pose.orientation.y*pose.orientation.y + pose.orientation.z*pose.orientation.z);
+  double roll = atan2(2.0*(pose.orientation.x*pose.orientation.y + pose.orientation.w*pose.orientation.z), pose.orientation.w*pose.orientation.w + pose.orientation.x*pose.orientation.x - pose.orientation.y*pose.orientation.y - pose.orientation.z*pose.orientation.z);
+  ROS_INFO_STREAM("pitch: " << pitch);
+  ROS_INFO_STREAM("yaw: " << yaw);
+  ROS_INFO_STREAM("roll: " << roll);
   robot_row = (int)((pose.position.y / info.resolution) + (info.height/2.0));
   robot_col = (int)(((pose.position.x+1) / info.resolution) + (info.width/2.0));
 }
