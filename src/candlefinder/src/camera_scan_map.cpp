@@ -2,6 +2,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/MapMetaData.h>
+#include "camera_scan_map.h"
 
 int8[] map;
 MapMetaData info;
