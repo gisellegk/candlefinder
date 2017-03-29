@@ -9,8 +9,8 @@
 
   <license>MIT</license>
 
-  <url type="website">gisellegk.github.io/candlefinder</url> 
-  <url type="repository">https://github.com/gisellegk/candlefinder</url> 
+  <url type="website">gisellegk.github.io/candlefinder</url>
+  <url type="repository">https://github.com/gisellegk/candlefinder</url>
 
   <author email="gisellegk@gmail.com">Giselle Koo</author> -->
   <author email="ericsimsm@gmail.com">Eric Sims</author>
@@ -35,6 +35,9 @@
 
   <build_depend>geometry_msgs</build_depend>
   <run_depend>geometry_msgs</run_depend>
+
+  <build_depend>nav_msgs</build_depend>
+  <run_depend>nav_msgs</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
