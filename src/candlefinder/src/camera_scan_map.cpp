@@ -47,12 +47,10 @@ void saveMap(const nav_msgs::OccupancyGrid& msg){
 
 void savePose(const geometry_msgs::PoseStamped& msg){
   pose = msg.pose;
-  double pitch = asin(-2.0*(pose.orientation.x*pose.orientation.z - pose.orientation.w*pose.orientation.y));
-  double yaw = var yaw = atan2(2.0*(pose.orientation.y*pose.orientation.z + pose.orientation.w*pose.orientation.x), pose.orientation.w*pose.orientation.w - pose.orientation.x*pose.orientation.x - pose.orientation.y*pose.orientation.y + pose.orientation.z*pose.orientation.z);
-  double roll = atan2(2.0*(pose.orientation.x*pose.orientation.y + pose.orientation.w*pose.orientation.z), pose.orientation.w*pose.orientation.w + pose.orientation.x*pose.orientation.x - pose.orientation.y*pose.orientation.y - pose.orientation.z*pose.orientation.z);
-  ROS_INFO_STREAM("pitch: " << pitch);
-  ROS_INFO_STREAM("yaw: " << yaw);
-  ROS_INFO_STREAM("roll: " << roll);
-  robot_row = (int)((pose.position.y / info.resolution) + (info.height/2.0));
-  robot_col = (int)(((pose.position.x+1) / info.resolution) + (info.width/2.0));
+  double angle = atan2(2.0*(pose.orientation.x*pose.orientation.y + pose.orientation.w*pose.orientation.z), pose.orientation.w*pose.orientation.w + pose.orientation.x*pose.orientation.x - pose.orientation.y*pose.orientation.y - pose.orientation.z*pose.orientation.z);
+
+  float x = (pose.position.y / info.resolution) + (info.height/2.0);
+  float y = ((pose.position.x+1) / info.resolution) + (info.width/2.0);
+  robot_row = (int)(sqrt(x^2+y^2)*cos(atan(y/x)+angle));
+  robot_col = (int)(sqrt(x^2+y^2)*sin(atan(y/x)+angle));
 }
