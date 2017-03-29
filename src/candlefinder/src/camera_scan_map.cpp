@@ -52,7 +52,8 @@ int main(int argc, char* argv[]){
       //double check that the robot's position is considered "unoccupied"
 
       //FOR EACH PIXEL IN THIS LINE
-      for(int i = 1; m[currentPixel] == 0; i++) {
+      int maxRange = 10; //idk
+      for(int i = 1; m[currentPixel] == 0 || i < maxRange; i++) {
         cam_scan[currentPixel] = 1; // 1 = scanned. i guess. idk.
         currentPixel = robotIndex + (int)(i * (info.width*run + rise));
         //idk if you can just add this shit together or what okay
