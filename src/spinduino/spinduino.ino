@@ -24,7 +24,7 @@ ros::NodeHandle  nh;
 ros::Subscriber<geometry_msgs::Quaternion> sub("head_angle", receiveMessage );
 
 geometry_msgs::Quaternion angle_msg;
-ros::Publisher pub("head_angle", &angle_msg);
+ros::Publisher pub("current_head_angle", &angle_msg);
 std_msgs::String str_msg;
 ros::Publisher chatter("chatter", &str_msg);
 
