@@ -29,6 +29,7 @@ int main(int argc, char* argv[]){
     int row = robot_row;
     int col = robot_col;
     int robotIndex = info.width*robot_row+robot_col;
+    ROS_INFO_STREAM("robotIndex " <<robotIndex);
     std::vector<int8_t> m = map;
     std::vector<int8_t>  cam_scan(info.width*info.height, -1);
     cam_scan[robotIndex] = 100; //robot is here
@@ -41,26 +42,26 @@ int main(int argc, char* argv[]){
       if the value of the map is 100 or -1 stop!!
 
     */
-    int numRays = 4;
+if(robotIndex != 0) {
+    int numRays = 500;
     for(int ray = 0; ray < numRays; ray++){
-      int angle = (360 / numRays)* ray;
+      int angle = (360.0 / numRays)* ray;
       // 0 = 0, 1 = 90, 2=180, 3=270
-
-      float rise = sin(angle);
-      float run = cos(angle); // i think?
+      float rise = sin(angle/57.6);
+      float run = cos(angle/57.6); // i think?
+  
       int currentPixel = robotIndex;
       //double check that the robot's position is considered "unoccupied"
-
+     
       //FOR EACH PIXEL IN THIS LINE
-      int maxRange = 10; //idk
-      for(int i = 1; m[currentPixel] == 0 || i < maxRange; i++) {
+      int maxRange = 25; //idk
+      for(int i = 1; m[currentPixel] != 100 && m[currentPixel] >= 0 && i < maxRange; i++) {
         cam_scan[currentPixel] = 1; // 1 = scanned. i guess. idk.
-        currentPixel = robotIndex + (int)(i * (info.width*run + rise));
-        //idk if you can just add this shit together or what okay
+        currentPixel = robotIndex + (int)((info.width*round(i * run) + round(i*rise)));
       }
       //now move on to the next ray :)
     }
-
+}
     nav_msgs::OccupancyGrid c;
     c.data = cam_scan;
     c.info = info;
