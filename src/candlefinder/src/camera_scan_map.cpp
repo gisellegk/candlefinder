@@ -44,7 +44,7 @@ int main(int argc, char* argv[]){
     if(robotIndex != 0) {
       int numRays = 100;
       for(int ray = 0 - (numRays/2); ray < numRays/2; ray++){
-        int a = angle + (60 / numRays)* ray;
+        int a = angle + (60.0 / numRays)* ray;
         float rise = sin(a/57.6);
         float run = cos(a/57.6); // hah radians
 
@@ -91,4 +91,5 @@ void saveHeadAngle(const geometry_msgs::Quaternion& msg){
 
 void saveBaseAngle(const geometry_msgs::Twist& msg){
   robotAngle = msg.angular.z;
+  ROS_INFO_STREAM("Robot Angle: " << robotAngle);
 }
