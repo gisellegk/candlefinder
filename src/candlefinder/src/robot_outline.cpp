@@ -33,30 +33,14 @@ int main(int argc, char* argv[]){
     int robotIndex = info.width*robot_row+robot_col;
     std::vector<int8_t> m = hector_map;
     robot_outline[robotIndex] = 100; //robot is here
-    int x = 5;
-    int y = 0;
-    int err = 0;
 
-    while (x >= y && robot_outline.size() != 1)
-    {
-      robot_outline[robotIndex + info.width*x + y];
-      robot_outline[robotIndex + info.width*y + x];
-      robot_outline[robotIndex - info.width*x + y];
-      robot_outline[robotIndex - info.width*y + x];
-      robot_outline[robotIndex - info.width*x - y];
-      robot_outline[robotIndex - info.width*y - x];
-      robot_outline[robotIndex + info.width*y - x];
-      robot_outline[robotIndex - info.width*x - y];
+    int radius = 10; //idk
 
-      if (err <= 0)
-      {
-        y += 1;
-        err += 2*y + 1;
-      }
-      if (err > 0)
-      {
-        x -= 1;
-        err -= 2*x + 1;
+    for(int y=-radius; y<=radius; y++){
+      for(int x=-radius; x<=radius; x++){
+        if(x*x+y*y <= radius*radius) {
+          robot_outline[robotIndex + info.width*x + y];
+        }
       }
     }
     nav_msgs::OccupancyGrid c;
