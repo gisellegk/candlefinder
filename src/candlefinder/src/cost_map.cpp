@@ -27,12 +27,12 @@ int main(int argc, char* argv[]){
   info.height = 1;
 
   while(ros::ok()) {
-    std::vector<int8_t> m = hector_map;
+    cost_map = hector_map;
 
     for(int i = 0; i < m.size(); i++){
       //are you ready!!!!
       //for each pixel in the map
-      if(m[i] == 100){
+      if(cost_map[i] == 100){
         int i_x = floor(i / info.width);
         int i_y = i % info.width;
 
