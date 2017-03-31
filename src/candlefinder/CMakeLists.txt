@@ -131,7 +131,9 @@ link_directories(${OPENCV_LIBRARY_DIRS})
 add_executable(opencv_node src/opencv_node.cpp)
 add_executable(robot_teleop src/robot_teleop.cpp)
 add_executable(camera_scan_map src/camera_scan_map.cpp)
+add_executable(cost_map src/cost_map.cpp)
 add_executable(robot_outline src/robot_outline.cpp)
+
 
 
 ## Rename C++ executable without prefix
@@ -151,6 +153,7 @@ target_link_libraries(opencv_node
 target_link_libraries(opencv_node ${OPENCV_LIBRARIES})
 target_link_libraries(robot_teleop ${catkin_LIBRARIES})
 target_link_libraries(camera_scan_map ${catkin_LIBRARIES})
+target_link_libraries(cost_map ${catkin_LIBRARIES})
 target_link_libraries(robot_outline ${catkin_LIBRARIES})
 #############
 ## Install ##
