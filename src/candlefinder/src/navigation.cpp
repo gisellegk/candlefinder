@@ -2,6 +2,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/MapMetaData.h>
+#include <queue>
 #include "navigation.h"
 
 std::vector<int8_t> cost_map;
@@ -36,14 +37,15 @@ int main(int argc, char* argv[]){
     std::vector<int8_t> m(info.width*info.height,-1);// = nav_map;
     if(nav_map.size() != 1) {
       int robotPos = info.width*robot_row+robot_col;
-      std::queue<int> frontier();
-      frontier.push_back(robotPos);
-      std::vector<bool> visted(info.width*info.height, false);
-      visited[currentPosition] = true;
+      std::queue<int> frontier;
+      frontier.push(robotPos);
+      std::vector<bool> visited(info.width*info.height, false);
+      visited[robotPos] = true;
 
-      while(frontier.size > 0) {
-        int currentPixel =  frontier.pop_front();
-        m(currentPixel) = 100;
+      while(frontier.size() > 0) {
+        int currentPixel =  frontier.front();
+        frontier.pop();
+        m[currentPixel] = 100;
         int currentPixel_X = currentPixel/info.width;
         int currentPixel_Y = currentPixel%info.width;
         //brace yourself...
@@ -52,11 +54,11 @@ int main(int argc, char* argv[]){
           int rise = round(sin(a/57.6));
           int run = round(cos(a/57.6)); // hah radians
           int next = XYtoCords(currentPixel_X + run, currentPixel_Y + rise);
-          if(!visted[next]) {
+          if(!visited[next]) {
             if(cost_map[next] != 100 && cost_map[next] >= 0) {
-              frontier.push_back(next);
+              frontier.push(next);
             }
-            visted(next) = true;
+            visited[next] = true;
           }
         }
       }
