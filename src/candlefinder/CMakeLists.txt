@@ -133,6 +133,7 @@ add_executable(robot_teleop src/robot_teleop.cpp)
 add_executable(camera_scan_map src/camera_scan_map.cpp)
 add_executable(cost_map src/cost_map.cpp)
 add_executable(robot_outline src/robot_outline.cpp)
+add_executable(navigation src/navigation.cpp)
 
 
 
@@ -155,6 +156,7 @@ target_link_libraries(robot_teleop ${catkin_LIBRARIES})
 target_link_libraries(camera_scan_map ${catkin_LIBRARIES})
 target_link_libraries(cost_map ${catkin_LIBRARIES})
 target_link_libraries(robot_outline ${catkin_LIBRARIES})
+target_link_libraries(navigation ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############
