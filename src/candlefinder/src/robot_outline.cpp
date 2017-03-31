@@ -35,13 +35,14 @@ int main(int argc, char* argv[]){
     robot_outline[robotIndex] = 100; //robot is here
 
     int radius = 10; //idk
-
+    if(robot_outline.size() != 1) {
     for(int y=-radius; y<=radius; y++){
       for(int x=-radius; x<=radius; x++){
         if(x*x+y*y <= radius*radius) {
           robot_outline[robotIndex + info.width*x + y];
         }
       }
+    }
     }
     nav_msgs::OccupancyGrid c;
     c.data = robot_outline;
