@@ -4,7 +4,7 @@
 #include <nav_msgs/MapMetaData.h>
 
 void saveMap(const nav_msgs::OccupancyGrid&);
-void savePixel(int, int);
+void changePixel(int, int);
 
 std::vector<int8_t> hector_map;
 std::vector<int8_t> cost_map(1,-1);
@@ -63,7 +63,7 @@ int main(int argc, char* argv[]){
 
 void changePixel(int x, int y){
   int coord = info.width*x+y;
-  if(coord < info.size()){
+  if(coord < info.width*info.height){
     cost_map[coord] = 100;
   }
 }
@@ -71,7 +71,7 @@ void changePixel(int x, int y){
 void saveMap(const nav_msgs::OccupancyGrid& msg){
   hector_map = msg.data;
   info = msg.info;
-  if(robot_outline.size() == 1) {
+  if(cost_map.size() == 1) {
     std::vector<int8_t> cost_map_new(msg.info.width*msg.info.height, -1);
     cost_map = cost_map_new; //jankasaurus
   }
