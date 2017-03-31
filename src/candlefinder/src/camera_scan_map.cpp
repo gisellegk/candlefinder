@@ -25,7 +25,7 @@ int main(int argc, char* argv[]){
   ros::Subscriber mapSub = nh.subscribe("map", 1000, &saveMap);
   ros::Subscriber poseSub = nh.subscribe("slam_out_pose", 1000, &savePose);
   ros::Subscriber headAngleSub = nh.subscribe("current_head_angle", 1000, &saveHeadAngle);
-  ros::Subscriber baseAngleSub = nh.subscribe("base_pose", 1000, &saveBaseAngle)
+  ros::Subscriber baseAngleSub = nh.subscribe("base_pose", 1000, &saveBaseAngle);
 
   ros::Rate rate(10); //idk
   ROS_INFO_STREAM("heres the camera scan map or something");
