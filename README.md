@@ -16,7 +16,7 @@ __msg.linear.x__: The target speed for the robot, from -1 to 1.
 
 ### base_pose
 Published by: driveduino
-Subscribed to by:
+Subscribed to by: camera_scan_map_node (camera_scan_map.cpp)
 Message Type: geometry_msgs::Twist
 
 __msg.angular.z__: The current angle of the robot's drive base, in degrees. This is an absolute position relative to the base's start position.
