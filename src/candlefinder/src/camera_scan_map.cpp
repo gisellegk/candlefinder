@@ -13,6 +13,8 @@ geometry_msgs::Pose pose;
 int robot_row = 0;
 int robot_col=0;
 
+int angle = 0;
+
 int main(int argc, char* argv[]){
   ros::init(argc, argv, "camera_scan_map_node");
   ros::NodeHandle nh;
@@ -20,6 +22,7 @@ int main(int argc, char* argv[]){
   ros::Publisher pub = nh.advertise<nav_msgs::OccupancyGrid>("camera_scan_map", 1000);
   ros::Subscriber mapSub = nh.subscribe("map", 1000, &saveMap);
   ros::Subscriber poseSub = nh.subscribe("slam_out_pose", 1000, &savePose);
+  ros::Subscriber angleSub = nh.subscribe("current_head_angle", 1000, &saveAngle);
 
   ros::Rate rate(10); //idk
   ROS_INFO_STREAM("heres the camera scan map or something");
@@ -29,19 +32,17 @@ int main(int argc, char* argv[]){
 
 
   while(ros::ok()) {
-    int row = robot_row;
-    int col = robot_col;
     int robotIndex = info.width*robot_row+robot_col;
-    ROS_INFO_STREAM("robotIndex " <<robotIndex);
+    ROS_INFO_STREAM("robotIndex " << robotIndex);
     std::vector<int8_t> m = hector_map;
     cam_scan[robotIndex] = 100; //robot is here
 
     if(robotIndex != 0) {
-      int numRays = 500;
-      for(int ray = 0; ray < numRays; ray++){
-        int angle = (360.0 / numRays)* ray;
-        float rise = sin(angle/57.6);
-        float run = cos(angle/57.6); // hah radians
+      int numRays = 100;
+      for(int ray = 0 - (numRays/2); ray < numRays/2; ray++){
+        int a = angle + (60 / numRays)* ray;
+        float rise = sin(a/57.6);
+        float run = cos(a/57.6); // hah radians
 
         int currentPixel = robotIndex;
 
@@ -77,4 +78,9 @@ void savePose(const geometry_msgs::PoseStamped& msg){
   pose = msg.pose;
   robot_row = (int)((pose.position.y / info.resolution) + (info.height/2.0));
   robot_col = (int)((pose.position.x / info.resolution) + (info.width/2.0));
+}
+
+
+void saveAngle(const geometry_msgs::Quaternion& msg){
+  angle = msg.z;
 }
