@@ -22,7 +22,7 @@ int main(int argc, char* argv[]){
   ros::NodeHandle nh;
 
   ros::Publisher pub = nh.advertise<nav_msgs::OccupancyGrid>("nav_map", 1000);
-  ros::Subscriber mapSub = nh.subscribe("map", 1000, &saveMap);
+  ros::Subscriber mapSub = nh.subscribe("cost_map", 1000, &saveMap);
   ros::Subscriber poseSub = nh.subscribe("slam_out_pose", 1000, &savePose);
 
   ros::Rate rate(10); //idk
