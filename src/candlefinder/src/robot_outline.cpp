@@ -37,16 +37,16 @@ int main(int argc, char* argv[]){
     int y = 0;
     int err = 0;
 
-    while (x >= y)
+    while (x >= y && robot_outline.size() != 1)
     {
-      robot_outline[robotIndex + info.width*x + y]
-      robot_outline[robotIndex + info.width*y + x]
-      robot_outline[robotIndex - info.width*x + y]
-      robot_outline[robotIndex - info.width*y + x]
-      robot_outline[robotIndex - info.width*x - y]
-      robot_outline[robotIndex - info.width*y - x]
-      robot_outline[robotIndex + info.width*y - x]
-      robot_outline[robotIndex - info.width*x - y]
+      robot_outline[robotIndex + info.width*x + y];
+      robot_outline[robotIndex + info.width*y + x];
+      robot_outline[robotIndex - info.width*x + y];
+      robot_outline[robotIndex - info.width*y + x];
+      robot_outline[robotIndex - info.width*x - y];
+      robot_outline[robotIndex - info.width*y - x];
+      robot_outline[robotIndex + info.width*y - x];
+      robot_outline[robotIndex - info.width*x - y];
 
       if (err <= 0)
       {
@@ -60,7 +60,7 @@ int main(int argc, char* argv[]){
       }
     }
     nav_msgs::OccupancyGrid c;
-    c.data = cam_scan;
+    c.data = robot_outline;
     c.info = info;
     pub.publish(c);
     ros::spinOnce();
@@ -71,9 +71,9 @@ int main(int argc, char* argv[]){
 void saveMap(const nav_msgs::OccupancyGrid& msg){
   hector_map = msg.data;
   info = msg.info;
-  if(cam_scan.size() == 1) { //if and only if this is the first msg. replace with a reeeaal map. or something idk.
-    std::vector<int8_t> cam_scan_new(msg.info.width*msg.info.height, -1);
-    cam_scan = cam_scan_new; //jankasaurus
+  if(robot_outline.size() == 1) { //if and only if this is the first msg. replace with a reeeaal map. or something idk.
+    std::vector<int8_t> robot_outline_new(msg.info.width*msg.info.height, -1);
+    robot_outline = robot_outline_new; //jankasaurus
   }
 }
 
