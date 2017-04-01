@@ -83,7 +83,7 @@ void loop()
         turnCW();
       }
     } else {
-      f(targetAngle < currentAngle) {
+      if(targetAngle < currentAngle) {
         turnCCW();
       } else { //if(targetAngle < currentAngle)
         turnCW();
