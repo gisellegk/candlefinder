@@ -2,12 +2,14 @@
 #include <geometry_msgs/Quaternion.h>
 #include <geometry_msgs/Point.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/UInt16MultiArray.h>
 #include <geometry_msgs/Twist.h>
 
 bool start = false;
 int flame_x = -1;
 int head_angle = 0;
 int base_angle = 0;
+std::vector<uint16_t> pathPoints;
 
 enum STATE {
   CAMSPIN,
@@ -25,6 +27,10 @@ void saveStartBool(const std_msgs::Bool& msg) {
     start = true;
     //it's 2am pls send help
   }
+}
+
+void savePathPlan(const std_msgs::UInt16MultiArray& msg) {
+  pathPoints = msg.data;
 }
 
 void saveFlameCoord(const geometry_msgs::Point& msg){
@@ -52,6 +58,7 @@ int main(int argc, char* argv[]){
 
   ros::Subscriber currentHeadAngleSub = nh.subscribe("current_head_angle", 1000, &saveCurrentHeadAngle);
   ros::Subscriber basePoseSub = nh.subscribe("base_pose", 1000, &saveBasePose);
+  ros::Subscriber pathPlanSub = nh.subscribe("path_plan", 1000, &savePathPlan);
 
   ros::Subscriber fftSub = nh.subscribe("start_bool", 1000, &saveStartBool);
   ros::Subscriber flameSub = nh.subscribe("flame_coord", 1000, &saveFlameCoord);
@@ -82,6 +89,16 @@ int main(int argc, char* argv[]){
         Begin line following, camscanning in the direction you are moving
       */
       case EXPLORE:
+      /*
+      get next point 
+      turn wheels to (left right up down) - current position     
+      */
+      if(pathPoints.size()>0) {
+        if(pathPoint[0] > 0) {
+          int currentPixel_X = currentPixel/info.width;
+          int currentPixel_Y = currentPixel%info.width;
+        }
+      }
       //this bit noodles the head around in the direction the base is pointing. hopefully.
         if(flame_x >= 0) {
           state = FLAME;

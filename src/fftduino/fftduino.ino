@@ -6,9 +6,14 @@
 #define LOG_OUT 1 // use the log output function
 #define FHT_N 128 // set to 256 point fht
 
+#define LED 13
+
+
 #include <FHT.h> // include the library
 
 int timeon = 0;
+
+
 
 ros::NodeHandle nh;
 
@@ -28,6 +33,11 @@ void debugPrint(String str) {
 bool published = true;
 
 void setup() {
+  //Serial.begin(115200);
+  pinMode(8,INPUT);
+  digitalWrite(8, HIGH);
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, LOW);
   //TIMSK0 = 0; // turn off timer0 for lower jitter
   ADCSRA = 0xe5; // set the adc to free running mode
   ADMUX = 0x40; // use adc0
@@ -62,23 +72,24 @@ void loop() {
     //Serial.write(255); // send a start byte
     //Serial.write(fht_log_out, FHT_N/2); // send out the data
     uint16_t totalAvg = 0;
-    for(uint16_t i = 0 ; i < FHT_N/2 ; i++) {
+    for(uint16_t i = 2 ; i < FHT_N/2 ; i++) {
       totalAvg += fht_log_out[i];
     }
-    totalAvg = totalAvg / (FHT_N/2);
+    totalAvg = totalAvg / (FHT_N/2-2);
     int avg = (fht_log_out[14] + fht_log_out[15] + fht_log_out[16]) / 3; 
     #ifdef CHATTER
     debugPrint(String(avg) + " " + String(totalAvg) + " " + String(timeon));
     #endif
-    if(avg > 110 && avg*0.9 > totalAvg){
+    if(avg > 5 && avg*1.1 > totalAvg){
       timeon++;
     } else if (timeon > 0) {
-      timeon -= 50;
+      timeon -= 10;
     }
     if (timeon < 0) {
       timeon = 0;
     }
-    if(timeon > 250) {
+    if(timeon > 250 || !digitalRead(8)) {
+      digitalWrite(LED, HIGH);
       bool_msg.data = true;
       if(!published) {
         published = true;
@@ -86,12 +97,14 @@ void loop() {
       }
       pub.publish( &bool_msg );
     } else {
+      digitalWrite(LED, LOW);
       bool_msg.data = false;
       if(published) {
         published = false;
         pub.publish( &bool_msg );
       }
     }
+    //Serial.println(String(avg) + " " + String(totalAvg) + " " + String(timeon));
     nh.spinOnce();
   }
 }
