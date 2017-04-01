@@ -5,40 +5,44 @@
 #include <Servo.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Float32.h>
 
 // IR stuff
 IRTherm therm; // Create an IRTherm object to interact with throughout
 
-const byte fire_detect_LED = 8; // Optional LED attached to pin 8 (active low)
+const byte fire_detect_LED = 13; // Optional LED attached to pin 8 (active low)
 
 float temp = 0;
 float amb = 0;
 
 ros::NodeHandle  nh;
 std_msgs::Bool bool_msg;
+std_msgs::Float32 tempMsg;
 ros::Publisher pub("heat_found", &bool_msg);
+ros::Publisher tempPub("temperature", &tempMsg);
 
 //CO2 stuff
 Servo myservo;  // create servo object to control a servo
 
 int potpin = 0;  // analog pin used to connect the potentiometer
 
-void extinguishFlame();
-ros::Subscriber<std_msgs::Bool> sub("extinguish", extinguishFlame );
+void extinguishFlame(const std_msgs::Bool&);
+ros::Subscriber<std_msgs::Bool> sub("extinguish", extinguishFlame ); 
 
 std_msgs::String str_msg;
-ros::Publisher chatter("chatter", &str_msg);
+//ros::Publisher chatter("chatter", &str_msg);
 
 void debugPrint(String str) {
   str_msg.data = str.c_str();
-  chatter.publish(&str_msg);
+ // chatter.publish(&str_msg);
 }
 
 void setup()
 {
   nh.initNode();
   nh.advertise(pub);
-  nh.advertise(chatter);
+  nh.advertise(tempPub);
+  //nh.advertise(chatter);
 
   therm.begin(); // Initialize thermal IR sensor
   therm.setUnit(TEMP_F);
@@ -58,6 +62,8 @@ void loop()
   if (therm.read()) // On success, read() will return 1, on fail 0.
   {
     temp = therm.object();
+    tempMsg.data = temp;
+    tempPub.publish(&tempMsg);
     amb = therm.ambient();
     if(temp > (amb+5)) {
       bool_msg.data = true;
@@ -86,6 +92,6 @@ void setLED(bool on)
 }
 
 
-void extinguishFlame(){
+void extinguishFlame(const std_msgs::Bool& b){
   myservo.write(140);
 }
