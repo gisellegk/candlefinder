@@ -30,7 +30,7 @@ Message Type: std_msgs::String
 __msg.data__: String of information to be printed. Good for debugging arduino code!
 
 ### target_head_angle
-Published by:
+Published by: spinduino_test
 Subscribed to by: spinduino
 Message Type: geometry_msgs::Quaternion
 
