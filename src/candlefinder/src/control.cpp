@@ -52,7 +52,7 @@ int main(int argc, char* argv[]){
   ros::Subscriber basePoseSub = nh.subscribe("base_pose", 1000, &saveBasePose);
 
   ros::Subscriber fftSub = nh.subscribe("start_bool", 1000, &saveStartBool);
-  ros::Subscriber flameSub = nh.subscribe("flame_coord", 1000, &saveFlameCoords);
+  ros::Subscriber flameSub = nh.subscribe("flame_coord", 1000, &saveFlameCoord);
 
   ros::Rate rate(10); //idk
   ROS_INFO_STREAM("let's do this!!!");
@@ -60,6 +60,8 @@ int main(int argc, char* argv[]){
 
   while(ros::ok()) {
     if(start){
+      geometry_msgs::Twist t;
+      geometry_msgs::Quaternion q;
       switch(state){
       //Search & extinguish sequence goes here
       /*
@@ -67,7 +69,6 @@ int main(int argc, char* argv[]){
         Spin 360 to camscan surrounding area
       */
       case CAMSPIN:
-        geometry_msgs::Quaternion q;
         q.z = 359;
         headAnglePub.publish(q);
         if(head_angle >=350) state = EXPLORE; //probs good enough i guess.
@@ -89,7 +90,6 @@ int main(int argc, char* argv[]){
         int angleDiff = abs(head_angle - base_angle);
         if(angleDiff > 180) 360 - angleDiff;
         if(angleDiff >= 60){
-          geometry_msgs::Quaternion q;
           if( base_angle + 60 < head_angle){
             q.z = base_angle - 60;
           }
@@ -115,7 +115,6 @@ int main(int argc, char* argv[]){
           break;
         }
         int offset = (720/2) - flame_x; // a negative number will be to the right?
-        geometry_msgs::Quaternion q;
         if(offset < 0) {
           q.z = head_angle - 1;
           headAnglePub.publish(q);
@@ -124,10 +123,9 @@ int main(int argc, char* argv[]){
           headAnglePub.publish(q);
         } else {
           // candle is already centered!
-          geometry_msgs::Twist t;
           t.angular.z = head_angle;
           t.linear.x = 1; //??????
-          driveVectorPub
+          driveVectorPub.publish(t);
         }
 
         break;
