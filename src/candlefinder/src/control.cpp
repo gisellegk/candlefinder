@@ -21,9 +21,9 @@ STATE state;
 void saveStartBool(const std_msgs::Bool& msg) {
   if(!start && msg.data) {
     ROS_INFO_STREAM("ALARM DETECTED!!! WEEEEOOOOOOOWEEEEOOOO");
+    start = true;
     //it's 2am pls send help
   }
-  start = msg.data;
 }
 
 void saveFlameCoord(const geometry_msgs::Point& msg){
