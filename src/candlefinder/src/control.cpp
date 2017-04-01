@@ -42,7 +42,7 @@ void saveBasePose(const geometry_msgs::Twist& msg){
 }
 
 int main(int argc, char* argv[]){
-  ros::init(argc, argv, "cost_map_node");
+  ros::init(argc, argv, "control_node");
   ros::NodeHandle nh;
 
   ros::Publisher headAnglePub = nh.advertise<geometry_msgs::Quaternion>("target_head_angle", 1000);

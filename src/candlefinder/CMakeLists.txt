@@ -134,6 +134,7 @@ add_executable(camera_scan_map src/camera_scan_map.cpp)
 add_executable(cost_map src/cost_map.cpp)
 add_executable(navigation src/navigation.cpp)
 add_executable(spinduino_test src/spinduino_test.cpp)
+add_executable(control src/control.cpp)
 
 
 ## Rename C++ executable without prefix
@@ -156,6 +157,7 @@ target_link_libraries(camera_scan_map ${catkin_LIBRARIES})
 target_link_libraries(cost_map ${catkin_LIBRARIES})
 target_link_libraries(navigation ${catkin_LIBRARIES})
 target_link_libraries(spinduino_test ${catkin_LIBRARIES})
+target_link_libraries(control ${catkin_LIBRARIES})
 
 #############
 ## Install ##
