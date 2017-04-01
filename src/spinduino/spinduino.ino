@@ -11,7 +11,7 @@
 #define HOME 13
 
 const long DELAY = 5;
-const int STEPS_PER_ROTATION = 2048/4; // steps per rotation
+const int STEPS_PER_ROTATION = 200/4*4; // steps per rotation
 
 int stepperPosition = 0;
 int currentAngle = 0;
