@@ -105,9 +105,9 @@ Published by: opencv_candlefinder (opencv_node.cpp)
 Subscribed to by:
 Message Type: geometry_msgs::Point
 
-__msg.x__: The x-position of the flame in the camera's vision
+__msg.x__: The x-position of the flame in the camera's vision. -1 if none available.
 
-__msg.y__: The y-position of the flame in the camera's vision
+__msg.y__: The y-position of the flame in the camera's vision. -1 if none available.
 
 ### heat_found
 Published by: cakeduino

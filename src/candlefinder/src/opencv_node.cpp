@@ -71,11 +71,17 @@ int main(int argc, char* argv[])
       pointMsg.y = keypoints[0].pt.y;
 
       pub.publish(pointMsg);
+    }else {
+      geometry_msgs::Point pointMsg;
+      pointMsg.x = -1;
+      pointMsg.y = -1;
     }
+
+    pub.publish(pointMsg);
 
     imshow("robovision", frame ); // show frame on computer output window
 
-    /* Escape = kill program 
+    /* Escape = kill program
     int keypress = waitKey(10)%255;
     if(keypress == 27){
         ROS_INFO_STREAM( << "key pressed: " << keypress << " see you later! :)" );
