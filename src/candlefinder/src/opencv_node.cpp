@@ -63,16 +63,15 @@ int main(int argc, char* argv[])
     std::vector<KeyPoint> keypoints;
     detector->detect( frame, keypoints);
     drawKeypoints( frame, keypoints, frame, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+    geometry_msgs::Point pointMsg;
     if(keypoints.size() > 0) {
       ROS_INFO_STREAM( "Flame coordinates: (" << keypoints[0].pt.x << ", " << keypoints[0].pt.y << ")" );
 
-      geometry_msgs::Point pointMsg;
       pointMsg.x = keypoints[0].pt.x;
       pointMsg.y = keypoints[0].pt.y;
 
       pub.publish(pointMsg);
     }else {
-      geometry_msgs::Point pointMsg;
       pointMsg.x = -1;
       pointMsg.y = -1;
     }

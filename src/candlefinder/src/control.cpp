@@ -10,9 +10,10 @@ int head_angle = 0;
 int base_angle = 0;
 
 enum STATE {
-  CAMSPIN = 0,
-  EXPLORE = 1,
-  FLAME = 2
+  CAMSPIN,
+  EXPLORE,
+  FLAME,
+  EXTINGUISH
 };
 
 STATE state;
@@ -63,6 +64,7 @@ int main(int argc, char* argv[]){
       geometry_msgs::Twist t;
       geometry_msgs::Quaternion q;
       int angleDiff;
+      int offset;
       switch(state){
       //Search & extinguish sequence goes here
       /*
@@ -115,7 +117,7 @@ int main(int argc, char* argv[]){
           state = EXPLORE;
           break;
         }
-        int offset = (720/2) - flame_x; // a negative number will be to the right?
+        offset = (720/2) - flame_x; // a negative number will be to the right?
         if(offset < 0) {
           q.z = head_angle - 1;
           headAnglePub.publish(q);
