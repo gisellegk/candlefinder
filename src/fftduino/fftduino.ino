@@ -25,8 +25,10 @@ void debugPrint(String str) {
 }
 #endif
 
+bool published = true;
+
 void setup() {
-  TIMSK0 = 0; // turn off timer0 for lower jitter
+  //TIMSK0 = 0; // turn off timer0 for lower jitter
   ADCSRA = 0xe5; // set the adc to free running mode
   ADMUX = 0x40; // use adc0
   DIDR0 = 0x01; // turn off the digital input for adc0
@@ -78,9 +80,17 @@ void loop() {
     }
     if(timeon > 250) {
       bool_msg.data = true;
+      if(!published) {
+        published = true;
+        pub.publish( &bool_msg );
+      }
       pub.publish( &bool_msg );
     } else {
       bool_msg.data = false;
+      if(published) {
+        published = false;
+        pub.publish( &bool_msg );
+      }
     }
     nh.spinOnce();
   }
