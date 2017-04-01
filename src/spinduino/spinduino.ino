@@ -62,10 +62,18 @@ void loop()
   if(currentAngle == targetAngle) {
     stepperOff();
   } else {
-    if(targetAngle > currentAngle) {
-      turnCCW();
-    } else { //if(targetAngle < currentAngle)
-      turnCW();
+    if( abs(targetAngle - currentAngle) < 180 ) {
+      if(targetAngle > currentAngle) {
+        turnCCW();
+      } else { //if(targetAngle < currentAngle)
+        turnCW();
+      }
+    } else {
+      f(targetAngle < currentAngle) {
+        turnCCW();
+      } else { //if(targetAngle < currentAngle)
+        turnCW();
+      }
     }
   }
   angle_msg.z = currentAngle*360/STEPS_PER_ROTATION;
