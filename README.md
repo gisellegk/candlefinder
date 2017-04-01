@@ -91,6 +91,15 @@ __msg.data__: An array of integers
 - 0 = in current search window
 - 100 = path to be followed
 
+### path_plan
+Published by: navigation_node (navigation.cpp)
+Subscribed to by:
+Message Type: std_msgs::UInt16MultiArray
+
+__msg.layou__: empty
+
+__msg.data__: list of points on line in the format: x*mapwidth + y
+
 ### flame_coord
 Published by: opencv_candlefinder (opencv_node.cpp)
 Subscribed to by:
