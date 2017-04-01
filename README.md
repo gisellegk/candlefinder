@@ -31,7 +31,7 @@ __msg.angular.z__: The current angle of the robot's drive base, in degrees. This
 __msg.linear.x__: The current speed for the robot, from -1 to 1.
 
 ### chatter
-Published by: driveduino, spinduino, fftduino
+Published by: driveduino, spinduino, fftduino, cakeduino
 Subscribed to by:
 Message Type: std_msgs::String
 
@@ -96,7 +96,7 @@ Published by: navigation_node (navigation.cpp)
 Subscribed to by:
 Message Type: std_msgs::UInt16MultiArray
 
-__msg.layou__: empty
+__msg.layout__: empty
 
 __msg.data__: list of points on line in the format: x*mapwidth + y
 
@@ -108,6 +108,20 @@ Message Type: geometry_msgs::Point
 __msg.x__: The x-position of the flame in the camera's vision
 
 __msg.y__: The y-position of the flame in the camera's vision
+
+### heat_found
+Published by: cakeduino
+Subscribed to by:
+Message Type: std_msgs::Bool
+
+__msg.data__: Boolean value, true if candle flame is detected by the IR sensor
+
+### extinguish
+Published by:
+Subscribed to by: cakeduino
+Message Type: std_msgs::Bool
+
+__msg.data__: Boolean value, true if CO2 valve should be opened
 
 ## Hector topics:
 ### map
