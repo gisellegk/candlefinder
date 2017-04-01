@@ -63,9 +63,9 @@ void setup()
   nh.advertise(pub);
   nh.advertise(chatter);
   nh.subscribe(sub);
-
+  
   //Serial.begin(9600);
-
+  
   findHome();
 }
 
@@ -76,18 +76,10 @@ void loop()
     drive(currentSpeed);
   } else {
     drive(0);
-    if( abs(targetAngle - currentAngle) < 180 ) {
-      if(targetAngle > currentAngle) {
-        turnCCW();
-      } else { //if(targetAngle < currentAngle)
-        turnCW();
-      }
-    } else {
-      if(targetAngle < currentAngle) {
-        turnCCW();
-      } else { //if(targetAngle < currentAngle)
-        turnCW();
-      }
+    if(targetAngle > currentAngle) {
+      turnCCW();
+    } else { //if(targetAngle < currentAngle)
+      turnCW();
     }
   }
   twist_msg.linear.x = currentSpeed;
@@ -122,8 +114,8 @@ void turnCW(){
   if(currentAngle < 0) currentAngle = STEPS_PER_ROTATION - 1;
 }
 
-void turnCCW(){
-
+void turnCCW(){ 
+  
   digitalWrite(STEP1, LOW);
   digitalWrite(STEP2, HIGH);
   digitalWrite(STEP3, HIGH);
