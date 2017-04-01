@@ -6,6 +6,7 @@
 
 bool start = false;
 int flame_x = -1;
+int flame_y = -1;
 int head_angle = 0;
 int base_angle = 0;
 
@@ -28,6 +29,7 @@ void saveStartBool(const std_msgs::Bool& msg) {
 
 void saveFlameCoord(const geometry_msgs::Point& msg){
   flame_x = msg.x;
+  flame_y = msg.y;
 }
 
 void saveCurrentHeadAngle(const geometry_msgs::Quaternion& msg){
@@ -126,9 +128,17 @@ int main(int argc, char* argv[]){
           headAnglePub.publish(q);
         } else {
           // candle is already centered!
-          t.angular.z = head_angle;
-          t.linear.x = 1; //??????
-          driveVectorPub.publish(t);
+          //figure out how far away the candle is based on y value
+          if(true) {
+            t.angular.z = head_angle;
+            t.linear.x = 1; //??????
+            driveVectorPub.publish(t);
+          } else {
+            t.angular.x = head_angle;
+            t.linear.x = 0;
+            driveVectorPub.publish(t);
+            state = EXTINGUISH;
+          }
         }
 
         break;
