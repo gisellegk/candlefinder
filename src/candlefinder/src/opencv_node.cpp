@@ -57,6 +57,14 @@ int main(int argc, char* argv[])
     /* Process frame image */
     cvtColor(frame, frame, COLOR_BGR2GRAY);
     GaussianBlur(frame, frame, Size(3,3), 1.5, 1.5); // remove noise
+    //threshold hopefully
+    // Set threshold and maxValue
+    double thresh = 127;
+    double maxValue = 255;
+
+    // Binary Threshold
+    threshold(frame,frame, thresh, maxValue, THRESH_BINARY);
+
     bitwise_not(frame, frame); // invert colors - you are looking for the light but this searches for dark
 
     /* Search for flame and draw a red circle around it */
