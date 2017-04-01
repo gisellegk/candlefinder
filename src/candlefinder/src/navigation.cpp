@@ -35,8 +35,8 @@ int main(int argc, char* argv[]){
 
   while(ros::ok()) {
     std::vector<int8_t> m(info.width*info.height,-1);// = nav_map;
-    if(nav_map.size() != 1) {
-      int robotPos = info.width*robot_row+robot_col;
+    int robotPos = info.width*robot_row+robot_col;
+    if(nav_map.size() != 1 && robotPos > 0) {
       std::queue<int> frontier;
       frontier.push(robotPos);
       std::vector<bool> visited(info.width*info.height, false);

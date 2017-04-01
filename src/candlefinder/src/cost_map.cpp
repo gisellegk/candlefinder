@@ -29,7 +29,7 @@ int main(int argc, char* argv[]){
   while(ros::ok()) {
     cost_map = hector_map;
 
-    for(int i = 0; i < m.size(); i++){
+    for(int i = 0; i < cost_map.size(); i++){
       //are you ready!!!!
       //for each pixel in the map
       if(cost_map[i] == 100){
