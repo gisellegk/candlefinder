@@ -87,6 +87,10 @@ __msg.info__: A collection of useful information about the map, including its wi
 
 __msg.data__: An array of integers
 
+- -1 = unexplored
+- 0 = in current search window
+- 100 = path to be followed
+
 ### flame_coord
 Published by: opencv_candlefinder (opencv_node.cpp)
 Subscribed to by:
