@@ -46,6 +46,7 @@ int main(int argc, char* argv[]){
   ros::NodeHandle nh;
 
   ros::Publisher headAnglePub = nh.advertise<geometry_msgs::Quaternion>("target_head_angle", 1000);
+  ros::Publisher driveVectorPub = nh.advertise<geometry_msgs::Twist>("drive_vector", 1000);
 
   ros::Subscriber currentHeadAngleSub = nh.subscribe("current_head_angle", 1000, &saveCurrentHeadAngle);
   ros::Subscriber basePoseSub = nh.subscribe("base_pose", 1000, &saveBasePose);
@@ -79,6 +80,10 @@ int main(int argc, char* argv[]){
       //this bit noodles the head around in the direction the base is pointing. hopefully.
         if(flame_x >= 0) {
           state = FLAME;
+          geometry_msgs::Twist v;
+          v.angular.z = base_angle;
+          v.linear.z = 0;
+          driveVectorPub.publish(v); // should essentially stop the bot
           break;
         }
         int angleDiff = abs(head_angle - base_angle);
@@ -109,7 +114,22 @@ int main(int argc, char* argv[]){
           state = EXPLORE;
           break;
         }
-        
+        int offset = (720/2) - flame_x; // a negative number will be to the right?
+        geometry_msgs::Quaternion q;
+        if(offset < 0) {
+          q.z = head_angle - 1;
+          headAnglePub.publish(q);
+        } else if (offset > 0) {
+          q.z = head_angle + 1;
+          headAnglePub.publish(q);
+        } else {
+          // candle is already centered!
+          geometry_msgs::Twist t;
+          t.angular.z = head_angle;
+          t.linear.x = 1; //??????
+          driveVectorPub
+        }
+
         break;
       /*
       state EXTINGUISH:
