@@ -6,6 +6,7 @@
 #include "navigation.h"
 
 std::vector<int8_t> cost_map;
+std::vector<int8_t> cam_map;
 std::vector<int8_t> nav_map(1,-1);
 
 nav_msgs::MapMetaData info;
@@ -24,6 +25,7 @@ int main(int argc, char* argv[]){
 
   ros::Publisher pub = nh.advertise<nav_msgs::OccupancyGrid>("nav_map", 1000);
   ros::Subscriber mapSub = nh.subscribe("cost_map", 1000, &saveMap);
+  ros::Subscriber camSub = nh.subscribe("camera_scan_map", 1000, &saveCamMap);
   ros::Subscriber poseSub = nh.subscribe("slam_out_pose", 1000, &savePose);
 
   ros::Rate rate(10); //idk
@@ -36,32 +38,44 @@ int main(int argc, char* argv[]){
   while(ros::ok()) {
     std::vector<int8_t> m(info.width*info.height,-1);// = nav_map;
     if(nav_map.size() != 1) {
+      int finalTarget = -1;
       int robotPos = info.width*robot_row+robot_col;
       std::queue<int> frontier;
       frontier.push(robotPos);
-      std::vector<bool> visited(info.width*info.height, false);
-      visited[robotPos] = true;
+      std::vector<int> came_from(info.width*info.height, -1);
+      came_from[robotPos] = robotPos;
 
-      while(frontier.size() > 0) {
+      while(frontier.size() > 0 || finalTarget != -1) {
         int currentPixel =  frontier.front();
         frontier.pop();
-        m[currentPixel] = 100;
-        int currentPixel_X = currentPixel/info.width;
-        int currentPixel_Y = currentPixel%info.width;
-        //brace yourself...
-        for(int i = 0; i < 4; i++) {
-          int a = 90*i;
-          int rise = round(sin(a/57.6));
-          int run = round(cos(a/57.6)); // hah radians
-          int next = XYtoCords(currentPixel_X + run, currentPixel_Y + rise);
-          if(!visited[next]) {
-            if(cost_map[next] <= 50 && cost_map[next] >= 0) {
-              frontier.push(next);
+        if(cam_map[currentPixel] < 100) {
+          foundTarget = currentPixel;
+        } else {
+          m[currentPixel] = 20;
+          int currentPixel_X = currentPixel/info.width;
+          int currentPixel_Y = currentPixel%info.width;
+          //brace yourself...
+          for(int i = 0; i < 4; i++) {
+            int a = 90*i;
+            int rise = round(sin(a/57.6));
+            int run = round(cos(a/57.6)); // hah radians
+            int next = XYtoCords(currentPixel_X + run, currentPixel_Y + rise);
+            if(came_from[next] == -1) {
+              if(cost_map[next] <= 50 && cost_map[next] >= 0) {
+                frontier.push(next);
+              }
+              came_from[next] = current;
             }
-            visited[next] = true;
           }
         }
       }
+    }
+
+
+    int linePos = foundTarget;
+    while(linePos != robotPos) {
+      m[linePos] = 100;
+      linePos = came_from[linePos];
     }
 
     nav_msgs::OccupancyGrid c;
@@ -80,6 +94,14 @@ void saveMap(const nav_msgs::OccupancyGrid& msg){
   if(nav_map.size() == 1) { //if and only if this is the first msg. replace with a reeeaal map. or something idk.
     std::vector<int8_t> nav_map_new(msg.info.width*msg.info.height, -1);
     nav_map = nav_map_new; //jankasaurus
+  }
+}
+
+void camMap(const nav_msgs::OccupancyGrid& msg){
+  cam_map = msg.data;
+  if(cam_map.size() == 1) { //if and only if this is the first msg. replace with a reeeaal map. or something idk.
+    std::vector<int8_t> cam_map_new(msg.info.width*msg.info.height, -1);
+    cam_map = cam_map_new; //jankasaurus
   }
 }
 
