@@ -55,7 +55,7 @@ int main(int argc, char* argv[]){
           int run = round(cos(a/57.6)); // hah radians
           int next = XYtoCords(currentPixel_X + run, currentPixel_Y + rise);
           if(!visited[next]) {
-            if(cost_map[next] != 100 && cost_map[next] >= 0) {
+            if(cost_map[next] <= 50 && cost_map[next] >= 0) {
               frontier.push(next);
             }
             visited[next] = true;
