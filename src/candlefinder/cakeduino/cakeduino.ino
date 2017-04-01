@@ -2,18 +2,29 @@
 #include <ros.h>
 #include <Wire.h> // I2C library, required for MLX90614
 #include <SparkFunMLX90614.h> // SparkFunMLX90614 Arduino library
+#include <Servo.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Bool.h>
 
+// IR stuff
 IRTherm therm; // Create an IRTherm object to interact with throughout
 
-const byte LED_PIN = 8; // Optional LED attached to pin 8 (active low)
+const byte fire_detect_LED = 8; // Optional LED attached to pin 8 (active low)
+
 float temp = 0;
 float amb = 0;
 
 ros::NodeHandle  nh;
 std_msgs::Bool bool_msg;
 ros::Publisher pub("heat_found", &bool_msg);
+
+//CO2 stuff
+Servo myservo;  // create servo object to control a servo
+
+int potpin = 0;  // analog pin used to connect the potentiometer
+
+void extinguishFlame();
+ros::Subscriber<std_msgs::Bool> sub("extinguish", extinguishFlame );
 
 std_msgs::String str_msg;
 ros::Publisher chatter("chatter", &str_msg);
@@ -32,7 +43,10 @@ void setup()
   therm.begin(); // Initialize thermal IR sensor
   therm.setUnit(TEMP_F);
 
-  pinMode(LED_PIN, OUTPUT); // LED pin as output
+  myservo.attach(3);  // attaches the servo on pin 9 to the servo object
+  myservo.write(70);
+
+  pinMode(fire_detect_LED, OUTPUT); // LED pin as output
   setLED(LOW); // LED OFF
 
 }
@@ -45,7 +59,7 @@ void loop()
   {
     temp = therm.object();
     amb = therm.ambient();
-    if(temp > (amb*1.5)) {
+    if(temp > (amb+5)) {
       bool_msg.data = true;
       pub.publish( &bool_msg );
       setLED(HIGH);
@@ -66,7 +80,12 @@ void loop()
 void setLED(bool on)
 {
   if (on)
-  digitalWrite(LED_PIN, LOW);
+  digitalWrite(fire_detect_LED, LOW);
   else
-  digitalWrite(LED_PIN, HIGH);
+  digitalWrite(fire_detect_LED, HIGH);
+}
+
+
+void extinguishFlame(){
+  myservo.write(140);
 }
