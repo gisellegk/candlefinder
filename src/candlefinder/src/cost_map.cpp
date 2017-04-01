@@ -64,7 +64,7 @@ int main(int argc, char* argv[]){
 void changePixel(int x, int y){
   int coord = info.width*x+y;
   if(coord < info.width*info.height){
-    cost_map[coord] = 100;
+    cost_map[coord] = 99;
   }
 }
 
