@@ -62,6 +62,7 @@ int main(int argc, char* argv[]){
     if(start){
       geometry_msgs::Twist t;
       geometry_msgs::Quaternion q;
+      int angleDiff;
       switch(state){
       //Search & extinguish sequence goes here
       /*
@@ -87,7 +88,7 @@ int main(int argc, char* argv[]){
           driveVectorPub.publish(v); // should essentially stop the bot
           break;
         }
-        int angleDiff = abs(head_angle - base_angle);
+        angleDiff = abs(head_angle - base_angle);
         if(angleDiff > 180) 360 - angleDiff;
         if(angleDiff >= 60){
           if( base_angle + 60 < head_angle){
