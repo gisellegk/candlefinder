@@ -19,6 +19,7 @@ enum STATE {
 STATE state;
 
 void saveStartBool(const std_msgs::Bool& msg) {
+    ROS_INFO_STREAM("fftdata");
   if(!start && msg.data) {
     ROS_INFO_STREAM("ALARM DETECTED!!! WEEEEOOOOOOOWEEEEOOOO");
     start = true;

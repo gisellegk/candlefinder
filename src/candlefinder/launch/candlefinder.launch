@@ -34,4 +34,7 @@
   <node pkg="candlefinder" type="cost_map" name="cost_map" />
   <node pkg="candlefinder" type="navigation" name="navigation" />
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rplidar_ros)/rviz/slam.rviz" />
+  <node pkg="rosserial_python" type="serial_node.py" name="ardu1" args="/dev/ttyUSB1" respawn="true"/>
+  <node pkg="rosserial_python" type="serial_node.py" name="ardu2" args="/dev/ttyUSB2" respawn="true"/>
+  <node pkg="rosserial_python" type="serial_node.py" name="ardu3" args="/dev/ttyUSB3" respawn="true"/>
 </launch>
