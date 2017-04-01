@@ -6,7 +6,7 @@
 #include "navigation.h"
 
 std::vector<int8_t> cost_map;
-std::vector<int8_t> cam_map;
+std::vector<int8_t> cam_map(1,-1);
 std::vector<int8_t> nav_map(1,-1);
 
 nav_msgs::MapMetaData info;
@@ -38,20 +38,21 @@ int main(int argc, char* argv[]){
   while(ros::ok()) {
     std::vector<int8_t> m(info.width*info.height,-1);// = nav_map;
     int robotPos = info.width*robot_row+robot_col;
-    if(nav_map.size() != 1 && robotPos > 0) {
+    if(nav_map.size() != 1 && cam_map.size() != 1 &&  robotPos > 0) {
       int finalTarget = -1;
       std::queue<int> frontier;
       frontier.push(robotPos);
       std::vector<int> came_from(info.width*info.height, -1);
       came_from[robotPos] = robotPos;
 
-      while(frontier.size() > 0 || finalTarget != -1) {
+      while(frontier.size() > 0 && finalTarget == -1) {
         int currentPixel =  frontier.front();
         frontier.pop();
-        if(cam_map[currentPixel] < 100) {
-          foundTarget = currentPixel;
+        ROS_INFO_STREAM("camvalhere " << (cam_map[currentPixel] != 1));
+        if(cam_map[currentPixel] != 1) {
+          finalTarget = currentPixel;
         } else {
-          m[currentPixel] = 20;
+          m[currentPixel] = 0;
           int currentPixel_X = currentPixel/info.width;
           int currentPixel_Y = currentPixel%info.width;
           //brace yourself...
@@ -64,18 +65,18 @@ int main(int argc, char* argv[]){
               if(cost_map[next] <= 50 && cost_map[next] >= 0) {
                 frontier.push(next);
               }
-              came_from[next] = current;
+              came_from[next] = currentPixel;
             }
           }
         }
       }
-    }
-
-
-    int linePos = foundTarget;
-    while(linePos != robotPos) {
-      m[linePos] = 100;
-      linePos = came_from[linePos];
+      if(finalTarget!=-1 ) {
+        int linePos = finalTarget;
+        do{
+          m[linePos] = 100;
+          linePos = came_from[linePos];
+        } while(linePos != robotPos);
+      }
     }
 
     nav_msgs::OccupancyGrid c;
@@ -97,7 +98,7 @@ void saveMap(const nav_msgs::OccupancyGrid& msg){
   }
 }
 
-void camMap(const nav_msgs::OccupancyGrid& msg){
+void saveCamMap(const nav_msgs::OccupancyGrid& msg){
   cam_map = msg.data;
   if(cam_map.size() == 1) { //if and only if this is the first msg. replace with a reeeaal map. or something idk.
     std::vector<int8_t> cam_map_new(msg.info.width*msg.info.height, -1);
