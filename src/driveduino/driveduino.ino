@@ -63,9 +63,9 @@ void setup()
   nh.advertise(pub);
   nh.advertise(chatter);
   nh.subscribe(sub);
-  
+
   //Serial.begin(9600);
-  
+
   findHome();
 }
 
@@ -114,8 +114,8 @@ void turnCW(){
   if(currentAngle < 0) currentAngle = STEPS_PER_ROTATION - 1;
 }
 
-void turnCCW(){ 
-  
+void turnCCW(){
+
   digitalWrite(STEP1, LOW);
   digitalWrite(STEP2, HIGH);
   digitalWrite(STEP3, HIGH);
