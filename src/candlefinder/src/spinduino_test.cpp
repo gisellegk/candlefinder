@@ -16,18 +16,23 @@ int main(int argc, char* argv[]){
   while(ros::ok()) {
     if(counter == 1) {
       q.z = 25;
+      ROS_INFO_STREAM(q.z);
       pub.publish(q);
     } else if (counter == 2) {
       q.z = 90;
+      ROS_INFO_STREAM(q.z);
       pub.publish(q);
     } else if (counter == 4) {
       q.z = 355;
+      ROS_INFO_STREAM(q.z);
       pub.publish(q);
     } else if (counter == 5) {
       q.z = 470;
+      ROS_INFO_STREAM(q.z);
       pub.publish(q);
     }
     counter++;
+    ROS_INFO_STREAM(counter);
     ros::spinOnce();
     rate.sleep();
   }

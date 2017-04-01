@@ -37,6 +37,7 @@ void debugPrint(String str) {
 void receiveMessage( const geometry_msgs::Quaternion& msg){
   // this converts degrees to steps. does not deal with negative angles. try getting rid of mod and using the full double value?
   targetAngle = ((int)msg.z % 360)/360.0*STEPS_PER_ROTATION;
+  debugPrint("message");
 }
 
 void setup()
