@@ -2,6 +2,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/MapMetaData.h>
+#include <std_msgs/UInt16MultiArray.h>
 #include <queue>
 #include "navigation.h"
 
@@ -23,7 +24,8 @@ int main(int argc, char* argv[]){
   ros::init(argc, argv, "navigation_node");
   ros::NodeHandle nh;
 
-  ros::Publisher pub = nh.advertise<nav_msgs::OccupancyGrid>("nav_map", 1000);
+  ros::Publisher nav_map_pub = nh.advertise<nav_msgs::OccupancyGrid>("nav_map", 1000);
+  ros::Publisher path_plan_pub = nh.advertise<std_msgs::UInt16MultiArray>("path_plan", 1000);
   ros::Subscriber mapSub = nh.subscribe("cost_map", 1000, &saveMap);
   ros::Subscriber camSub = nh.subscribe("camera_scan_map", 1000, &saveCamMap);
   ros::Subscriber poseSub = nh.subscribe("slam_out_pose", 1000, &savePose);
@@ -37,6 +39,7 @@ int main(int argc, char* argv[]){
 
   while(ros::ok()) {
     std::vector<int8_t> m(info.width*info.height,-1);// = nav_map;
+    std::std::vector<uint16_t> pathPoints;
     int robotPos = info.width*robot_row+robot_col;
     if(nav_map.size() != 1 && cam_map.size() != 1 &&  robotPos > 0) {
       int finalTarget = -1;
@@ -73,6 +76,7 @@ int main(int argc, char* argv[]){
       if(finalTarget!=-1 ) {
         int linePos = finalTarget;
         do{
+          pathPoints.push_back(linePos);
           m[linePos] = 100;
           linePos = came_from[linePos];
         } while(linePos != robotPos);
@@ -82,7 +86,10 @@ int main(int argc, char* argv[]){
     nav_msgs::OccupancyGrid c;
     c.data = m;
     c.info = info;
-    pub.publish(c);
+    nav_map_pub.publish(c);
+    std_msgs::UInt16MultiArray p;
+    p.data = pathPoints;
+    path_plan_pub.publish(p);
     ros::spinOnce();
     rate.sleep();
 }
