@@ -18,21 +18,21 @@ int main(int argc, char* argv[]){
       q.z = 25;
       ROS_INFO_STREAM(q.z);
       pub.publish(q);
-    } else if (counter == 2) {
+    } else if (counter == 5) {
       q.z = 90;
       ROS_INFO_STREAM(q.z);
       pub.publish(q);
-    } else if (counter == 4) {
+    } else if (counter == 10) {
       q.z = 355;
       ROS_INFO_STREAM(q.z);
       pub.publish(q);
-    } else if (counter == 5) {
+    } else if (counter == 15) {
       q.z = 470;
       ROS_INFO_STREAM(q.z);
       pub.publish(q);
     }
     counter++;
-    ROS_INFO_STREAM(counter);
+    ROS_INFO_STREAM(q.z);
     ros::spinOnce();
     rate.sleep();
   }
