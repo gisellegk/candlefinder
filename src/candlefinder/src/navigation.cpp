@@ -39,7 +39,7 @@ int main(int argc, char* argv[]){
 
   while(ros::ok()) {
     std::vector<int8_t> m(info.width*info.height,-1);// = nav_map;
-    std::std::vector<uint16_t> pathPoints;
+    std::vector<uint16_t> pathPoints;
     int robotPos = info.width*robot_row+robot_col;
     if(nav_map.size() != 1 && cam_map.size() != 1 &&  robotPos > 0) {
       int finalTarget = -1;

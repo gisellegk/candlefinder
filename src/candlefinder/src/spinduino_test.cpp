@@ -15,19 +15,19 @@ int main(int argc, char* argv[]){
 
   while(ros::ok()) {
     if(counter == 1) {
-      q.z = 25;
+      q.z = 20;
       ROS_INFO_STREAM(q.z);
       pub.publish(q);
     } else if (counter == 5) {
-      q.z = 90;
+      q.z = 89;
       ROS_INFO_STREAM(q.z);
       pub.publish(q);
     } else if (counter == 10) {
-      q.z = 355;
+      q.z = 271;
       ROS_INFO_STREAM(q.z);
       pub.publish(q);
     } else if (counter == 15) {
-      q.z = 470;
+      q.z = 89;
       ROS_INFO_STREAM(q.z);
       pub.publish(q);
     }
