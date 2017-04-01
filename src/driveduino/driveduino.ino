@@ -86,7 +86,7 @@ void loop()
   twist_msg.angular.z = currentAngle;
   pub.publish( &twist_msg );
   nh.spinOnce();
-  delay(00);
+  delay(500);
 }
 
 void turnCW(){
