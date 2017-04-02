@@ -14,7 +14,7 @@
 #define STEP4 5
 
 #define HOME 8
-
+  
 const long DELAY = 2;
 const int STEPS_PER_ROTATION = 2048/4; // steps per rotation
 
@@ -86,7 +86,6 @@ void loop()
   twist_msg.angular.z = currentAngle;
   pub.publish( &twist_msg );
   nh.spinOnce();
-  delay(500);
 }
 
 void turnCW(){

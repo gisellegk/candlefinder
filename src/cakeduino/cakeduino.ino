@@ -80,7 +80,6 @@ void loop()
     //these might not play nice with ros string message, not sure
   }
   nh.spinOnce();
-  delay(500);
 }
 
 void setLED(bool on)
