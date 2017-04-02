@@ -26,11 +26,11 @@ ros::Subscriber<geometry_msgs::Quaternion> sub("target_head_angle", receiveMessa
 geometry_msgs::Quaternion angle_msg;
 ros::Publisher pub("current_head_angle", &angle_msg);
 std_msgs::String str_msg;
-ros::Publisher chatter("chatter", &str_msg);
+//ros::Publisher chatter("chatter", &str_msg);
 
 void debugPrint(String str) {
   str_msg.data = str.c_str();
-  chatter.publish(&str_msg);
+  //chatter.publish(&str_msg);
 }
 
 //Angle should be 0 - 360, try to deal with fringe cases
@@ -51,7 +51,7 @@ void setup()
 
   nh.initNode();
   nh.advertise(pub);
-  nh.advertise(chatter);
+  //nh.advertise(chatter);
   nh.subscribe(sub);
 
   findHome();
@@ -68,7 +68,7 @@ void loop()
       turnCW();
     }
   }
-  angle_msg.z = currentAngle*360/STEPS_PER_ROTATION;
+  angle_msg.z = currentAngle/(float)STEPS_PER_ROTATION*360;
   pub.publish( &angle_msg );
   nh.spinOnce();
   delay(00);
@@ -131,12 +131,37 @@ void stepperOff(){
   digitalWrite(STEP4, LOW);
   debugPrint("stepper off");
 }
-
+void CWtillHome() {
+  while(digitalRead(HOME)){
+    digitalWrite(STEP1, HIGH);
+    digitalWrite(STEP2, LOW);
+    digitalWrite(STEP3, LOW);
+    digitalWrite(STEP4, HIGH);
+    delay(DELAY);
+    if(!digitalRead(HOME)) return;
+    digitalWrite(STEP1, HIGH);
+    digitalWrite(STEP2, HIGH);
+    digitalWrite(STEP3, LOW);
+    digitalWrite(STEP4, LOW);
+    delay(DELAY);
+    if(!digitalRead(HOME)) return;
+    digitalWrite(STEP1, LOW);
+    digitalWrite(STEP2, HIGH);
+    digitalWrite(STEP3, HIGH);
+    digitalWrite(STEP4, LOW);
+    delay(DELAY);
+    if(!digitalRead(HOME)) return;
+    digitalWrite(STEP1, LOW);
+    digitalWrite(STEP2, LOW);
+    digitalWrite(STEP3, HIGH);
+    digitalWrite(STEP4, HIGH);
+    delay(DELAY);
+    if(!digitalRead(HOME)) return;
+  }
+}
 void findHome(){
   debugPrint("Finding home...");
-  while(digitalRead(HOME)){
-    turnCW();
-  }
+  CWtillHome();
   debugPrint("Done!");
   stepperOff();
   currentAngle = 0;
