@@ -4,7 +4,7 @@
 #include <termios.h>
 #include <stdio.h>
 
-#define KEYCODE_R 0x43 
+#define KEYCODE_R 0x43
 #define KEYCODE_L 0x44
 #define KEYCODE_U 0x41
 #define KEYCODE_D 0x42
@@ -19,18 +19,18 @@ public:
 
 private:
 
-  
+
   ros::NodeHandle nh_;
   double linear_, angular_, l_scale_, a_scale_;
   ros::Publisher twist_pub_;
-  
+
 };
 
 TeleopRobot::TeleopRobot():
-  linear_(0),
-  angular_(0),
-  l_scale_(1.0),
-  a_scale_(1.0)
+linear_(0),
+angular_(0),
+l_scale_(1.0),
+a_scale_(1.0)
 {
   nh_.param("scale_angular", a_scale_, a_scale_);
   nh_.param("scale_linear", l_scale_, l_scale_);
@@ -58,7 +58,7 @@ int main(int argc, char** argv)
   signal(SIGINT,quit);
 
   teleop_robot.keyLoop();
-  
+
   return(0);
 }
 
@@ -69,11 +69,11 @@ void TeleopRobot::keyLoop()
   bool dirty=false;
 
 
-  // get the console in raw mode                                                              
+  // get the console in raw mode
   tcgetattr(kfd, &cooked);
   memcpy(&raw, &cooked, sizeof(struct termios));
   raw.c_lflag &=~ (ICANON | ECHO);
-  // Setting a new line, then end of file                         
+  // Setting a new line, then end of file
   raw.c_cc[VEOL] = 1;
   raw.c_cc[VEOF] = 2;
   tcsetattr(kfd, TCSANOW, &raw);
@@ -85,7 +85,7 @@ void TeleopRobot::keyLoop()
 
   for(;;)
   {
-    // get the next event from the keyboard  
+    // get the next event from the keyboard
     if(read(kfd, &c, 1) < 0)
     {
       perror("read():");
@@ -93,47 +93,47 @@ void TeleopRobot::keyLoop()
     }
 
     ROS_DEBUG("value: 0x%02X\n", c);
-  
+
     switch(c)
     {
       case KEYCODE_L:
-        ROS_DEBUG("LEFT");
-        angular_ = 90;
-	linear_ = .5;
-        dirty = true;
-        break;
+      ROS_INFO_STREAM("LEFT");
+      angular_ = 90;
+      linear_ = -.5;
+      dirty = true;
+      break;
       case KEYCODE_R:
-        ROS_DEBUG("RIGHT");
-	angular_= 90;
-        linear_ = -.5;
-        dirty = true;
-        break;
+      ROS_INFO_STREAM("RIGHT");
+      angular_= 90;
+      linear_ = .5;
+      dirty = true;
+      break;
       case KEYCODE_U:
-        ROS_DEBUG("UP");
-        angular_ = 0;
-	linear_=.5;
-        dirty = true;
-        break;
+      ROS_INFO_STREAM("forward");
+      angular_ = 0;
+      linear_=.5;
+      dirty = true;
+      break;
       case KEYCODE_D:
-        ROS_DEBUG("DOWN");
-	angular_= 0;
-        linear_ =-.5;
-        dirty = true;
-        break;
-     case KEYCODE_Q:
-	ROS_DEBUG("DRIVE");
-	linear_ = 0;
-	dirty=true;
-	break;
+      ROS_INFO_STREAM("backwards");
+      angular_= 0;
+      linear_ = -.5;
+      dirty = true;
+      break;
+      case KEYCODE_Q:
+      ROS_INFO_STREAM("off");
+      linear_ = 0;
+      dirty=true;
+      break;
     }
-   
+
 
     geometry_msgs::Twist twist;
     twist.angular.z = a_scale_*angular_;
     twist.linear.x = l_scale_*linear_;
     if(dirty ==true)
     {
-      twist_pub_.publish(twist);    
+      twist_pub_.publish(twist);
       dirty=false;
     }
   }
