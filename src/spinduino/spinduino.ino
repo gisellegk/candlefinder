@@ -131,37 +131,37 @@ void stepperOff(){
   digitalWrite(STEP4, LOW);
   debugPrint("stepper off");
 }
-
-void findHome(){
-  debugPrint("Finding home...");
+void CWtillHome() {
   while(digitalRead(HOME)){
     digitalWrite(STEP1, HIGH);
     digitalWrite(STEP2, LOW);
     digitalWrite(STEP3, LOW);
     digitalWrite(STEP4, HIGH);
     delay(DELAY);
-    if(!digitalRead(HOME)) break;
+    if(!digitalRead(HOME)) return;
     digitalWrite(STEP1, HIGH);
     digitalWrite(STEP2, HIGH);
     digitalWrite(STEP3, LOW);
     digitalWrite(STEP4, LOW);
     delay(DELAY);
-    if(!digitalRead(HOME)) break;
+    if(!digitalRead(HOME)) return;
     digitalWrite(STEP1, LOW);
     digitalWrite(STEP2, HIGH);
     digitalWrite(STEP3, HIGH);
     digitalWrite(STEP4, LOW);
     delay(DELAY);
-    if(!digitalRead(HOME)) break;
+    if(!digitalRead(HOME)) return;
     digitalWrite(STEP1, LOW);
     digitalWrite(STEP2, LOW);
     digitalWrite(STEP3, HIGH);
     digitalWrite(STEP4, HIGH);
     delay(DELAY);
-    if(!digitalRead(HOME)) break;
-    currentAngle--;
-    if(currentAngle < 0) currentAngle = STEPS_PER_ROTATION - 1;
+    if(!digitalRead(HOME)) return;
   }
+}
+void findHome(){
+  debugPrint("Finding home...");
+  CWtillHome();
   debugPrint("Done!");
   stepperOff();
   currentAngle = 0;
