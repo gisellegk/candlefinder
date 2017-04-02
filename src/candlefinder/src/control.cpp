@@ -113,16 +113,28 @@ int main(int argc, char* argv[]){
             int currentPixel_Y = pathPoints[1]%350;
             if(nextPixel_X > currentPixel_X) {
               ROS_INFO_STREAM("Left");
+              geometry_msgs::Twist v;
+              v.angular.z = 360+slam_angle;
+              v.linear.z = 0;
+              driveVectorPub.publish(v);
             } else if (nextPixel_X < currentPixel_X) {
               ROS_INFO_STREAM("Right");
+              geometry_msgs::Twist v;
+              v.angular.z = 360+slam_angle;
+              v.linear.z = 0;
+              driveVectorPub.publish(v);
             } else if (nextPixel_Y > currentPixel_Y) {
-              ROS_INFO_STREAM("Down");
+              ROS_INFO_STREAM("UP");
               geometry_msgs::Twist v;
               v.angular.z = 360+slam_angle+90;
               v.linear.z = 0;
               driveVectorPub.publish(v);
             } else if (nextPixel_Y < currentPixel_Y) {
-              ROS_INFO_STREAM("UP");
+              ROS_INFO_STREAM("Down");
+              geometry_msgs::Twist v;
+              v.angular.z = 360+slam_angle+90;
+              v.linear.z = 0;
+              driveVectorPub.publish(v);
             }
           }
         } else {
