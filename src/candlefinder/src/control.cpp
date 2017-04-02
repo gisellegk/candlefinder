@@ -4,12 +4,14 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/UInt16MultiArray.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/PoseStamped.h>
 
 bool start = false;
 int flame_x = -1;
 int flame_y = -1;
 int head_angle = 0;
 int base_angle = 0;
+int slam_angle = 0;
 std::vector<uint16_t> pathPoints;
 
 enum STATE {
@@ -22,7 +24,6 @@ enum STATE {
 STATE state;
 
 void saveStartBool(const std_msgs::Bool& msg) {
-    ROS_INFO_STREAM("fftdata");
   if(!start && msg.data) {
     ROS_INFO_STREAM("ALARM DETECTED!!! WEEEEOOOOOOOWEEEEOOOO");
     start = true;
@@ -51,6 +52,12 @@ void saveBasePose(const geometry_msgs::Twist& msg){
   base_angle = base_angle % 360;
 }
 
+void saveSlamPose(const geometry_msgs::PoseStamped& msg) {
+  geometry_msgs::Pose pose = msg.pose;
+  slam_angle = ((int)round(atan2(2*(pose.orientation.w*pose.orientation.z + pose.orientation.x*pose.orientation.y), 1-2*(pose.orientation.z*pose.orientation.z))*57.3)+360)%360;
+
+}
+
 int main(int argc, char* argv[]){
   ros::init(argc, argv, "control_node");
   ros::NodeHandle nh;
@@ -60,6 +67,7 @@ int main(int argc, char* argv[]){
 
   ros::Subscriber currentHeadAngleSub = nh.subscribe("current_head_angle", 1000, &saveCurrentHeadAngle);
   ros::Subscriber basePoseSub = nh.subscribe("base_pose", 1000, &saveBasePose);
+  ros::Subscriber slamPoseSub = nh.subscribe("slam_out_pose", 1000, &saveSlamPose);
   ros::Subscriber pathPlanSub = nh.subscribe("path_plan", 1000, &savePathPlan);
 
   ros::Subscriber fftSub = nh.subscribe("start_bool", 1000, &saveStartBool);
@@ -92,16 +100,39 @@ int main(int argc, char* argv[]){
       */
       case EXPLORE:
       /*
-      get next point 
-      turn wheels to (left right up down) - current position     
+      get next point
+      turn wheels to (left right up down) - current position
       */
-      if(pathPoints.size()>0) {
-        if(pathPoint[0] > 0) {
-          int currentPixel_X = currentPixel/info.width;
-          int currentPixel_Y = currentPixel%info.width;
+
+        if(pathPoints.size()>1) {
+
+          if(pathPoints[1] > 0) {
+            int nextPixel_X = pathPoints[01]/350;
+            int nextPixel_Y = pathPoints[0]%350;
+            int currentPixel_X = pathPoints[1]/350;
+            int currentPixel_Y = pathPoints[1]%350;
+            if(nextPixel_X > currentPixel_X) {
+              ROS_INFO_STREAM("Left");
+            } else if (nextPixel_X < currentPixel_X) {
+              ROS_INFO_STREAM("Right");
+            } else if (nextPixel_Y > currentPixel_Y) {
+              ROS_INFO_STREAM("Down");
+              geometry_msgs::Twist v;
+              v.angular.z = 360+slam_angle+90;
+              v.linear.z = 0;
+              driveVectorPub.publish(v);
+            } else if (nextPixel_Y < currentPixel_Y) {
+              ROS_INFO_STREAM("UP");
+            }
+          }
+        } else {
+          ROS_INFO_STREAM("No map");
+          geometry_msgs::Twist v;
+          v.angular.z = 360+slam_angle+90;
+          v.linear.z = 0;
+          driveVectorPub.publish(v);
         }
-      }
-      //this bit noodles the head around in the direction the base is pointing. hopefully.
+        //this bit noodles the head around in the direction the base is pointing. hopefully.
         if(flame_x >= 0) {
           state = FLAME;
           geometry_msgs::Twist v;
@@ -110,17 +141,8 @@ int main(int argc, char* argv[]){
           driveVectorPub.publish(v); // should essentially stop the bot
           break;
         }
-        angleDiff = abs(head_angle - base_angle);
-        if(angleDiff > 180) 360 - angleDiff;
-        if(angleDiff >= 60){
-          if( base_angle + 60 < head_angle){
-            q.z = base_angle - 60;
-          }
-          else {
-            q.z = base_angle + 60;
-          }
-          headAnglePub.publish(q);
-        }
+        q.z = 360+slam_angle;
+        headAnglePub.publish(q);
         break;
       /*
       state FLAME:
