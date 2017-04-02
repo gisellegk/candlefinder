@@ -36,8 +36,6 @@ int main(int argc, char* argv[])
     return -1;
   }
 
-  namedWindow("robovision",1); // computer output window
-
   /* Simple Blob Detector parameters */
   /*SimpleBlobDetector::Params params;
   // Change thresholds
@@ -65,7 +63,7 @@ int main(int argc, char* argv[])
 
     // Binary Threshold
     threshold(frame,frame, thresh, maxValue, 1);
-    imshow("robovision2", frame);
+
     bitwise_not(frame, frame); // invert colors - possibly unnecessary idk
 
     /* Search for flame and draw a rectangle around it */
@@ -90,10 +88,10 @@ int main(int argc, char* argv[])
     if(contours.size() > 0) {
       Rect r = boundRect[0];
 
-      ROS_INFO_STREAM( "Flame coordinates: (" << (r.x+(r.width/2.0)) << ", " << (r.y+(r.height/2.0)) << ")" );
+      //ROS_INFO_STREAM( "#contours " << contours.size() << " Flame coordinates: (" << (r.x+(r.width/2.0)) << ", " << (r.y+(r.height/2.0)) << ")" );
 
-      pointMsg.x = (r.x+(r.width/2.0))
-      pointMsg.y = keypoints[0].pt.y;
+      pointMsg.x = (r.x+(r.width/2.0));
+      pointMsg.y = (r.y+(r.height/2.0));
 
       pub.publish(pointMsg);
     }else {
@@ -103,7 +101,6 @@ int main(int argc, char* argv[])
 
     pub.publish(pointMsg);
 
-    imshow("robovision", dst ); // show frame on computer output window
 
     /* Escape = kill program
     int keypress = waitKey(10)%255;
