@@ -76,7 +76,7 @@ int main(int argc, char* argv[]){
       if(finalTarget!=-1 ) {
         int linePos = finalTarget;
         do{
-          pathPoints.push_back(linePos);
+          pathPoints.insert(pathPoints.begin(),linePos);
           m[linePos] = 100;
           linePos = came_from[linePos];
         } while(linePos != robotPos);
