@@ -68,7 +68,7 @@ void loop()
       turnCW();
     }
   }
-  angle_msg.z = currentAngle*360/STEPS_PER_ROTATION;
+  angle_msg.z = currentAngle/(float)STEPS_PER_ROTATION*360;
   pub.publish( &angle_msg );
   nh.spinOnce();
   delay(00);
