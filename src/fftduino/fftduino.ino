@@ -6,14 +6,12 @@
 #define LOG_OUT 1 // use the log output function
 #define FHT_N 128 // set to 256 point fht
 
-#define LED 13
+#define LED 10
 
 
 #include <FHT.h> // include the library
 
 int timeon = 0;
-
-
 
 ros::NodeHandle nh;
 
@@ -80,7 +78,7 @@ void loop() {
     #ifdef CHATTER
     debugPrint(String(avg) + " " + String(totalAvg) + " " + String(timeon));
     #endif
-    if(avg > 5 && avg*1.1 > totalAvg){
+    if(avg > 5 && avg*.9 > totalAvg){
       timeon++;
     } else if (timeon > 0) {
       timeon -= 10;
@@ -89,7 +87,6 @@ void loop() {
       timeon = 0;
     }
     if(timeon > 250 || !digitalRead(8)) {
-      digitalWrite(LED, HIGH);
       bool_msg.data = true;
       if(!published) {
         published = true;
@@ -97,7 +94,6 @@ void loop() {
       }
       pub.publish( &bool_msg );
     } else {
-      digitalWrite(LED, LOW);
       bool_msg.data = false;
       if(published) {
         published = false;
@@ -105,6 +101,7 @@ void loop() {
       }
     }
     //Serial.println(String(avg) + " " + String(totalAvg) + " " + String(timeon));
+    digitalWrite(LED, bool_msg.data);
     nh.spinOnce();
   }
 }
