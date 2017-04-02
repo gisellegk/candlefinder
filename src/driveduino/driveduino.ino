@@ -151,6 +151,9 @@ void findHome(){
   while(digitalRead(HOME)){
     turnCW();
   }
+  for(int i = 0; i < 90; i++) {
+    turnCCW();
+  }
   debugPrint("Done!");
   stepperOff();
   currentAngle = 0;

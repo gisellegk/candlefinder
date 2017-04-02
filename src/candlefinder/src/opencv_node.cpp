@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
   namedWindow("robovision",1); // computer output window
 
   /* Simple Blob Detector parameters */
-  SimpleBlobDetector::Params params;
+  /*SimpleBlobDetector::Params params;
   // Change thresholds
   params.minThreshold = 10;
   params.maxThreshold = 200;
@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
   params.filterByArea = true;
   params.minArea = 50;
 
-  Ptr<SimpleBlobDetector> detector = SimpleBlobDetector::create(params);
+  Ptr<SimpleBlobDetector> detector = SimpleBlobDetector::create(params);*/
 
   while(ros::ok())
   {
@@ -57,25 +57,42 @@ int main(int argc, char* argv[])
     /* Process frame image */
     cvtColor(frame, frame, COLOR_BGR2GRAY);
     GaussianBlur(frame, frame, Size(3,3), 1.5, 1.5); // remove noise
+
     //threshold hopefully
     // Set threshold and maxValue
     double thresh = 127;
     double maxValue = 255;
 
     // Binary Threshold
-    threshold(frame,frame, thresh, maxValue, THRESH_BINARY);
+    threshold(frame,frame, thresh, maxValue, 1);
+    imshow("robovision2", frame);
+    bitwise_not(frame, frame); // invert colors - possibly unnecessary idk
 
-    bitwise_not(frame, frame); // invert colors - you are looking for the light but this searches for dark
+    /* Search for flame and draw a rectangle around it */
+    std::vector<std::vector<Point> > contours;
+    std::vector<Vec4i> hierarchy;
+    findContours( frame, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+    /// Approximate contours to polygons + get bounding rects and circles
+    std::vector<std::vector<Point> > contours_poly( contours.size() );
+    std::vector<Rect> boundRect( contours.size() );
+    //std::vector<Point2f>center( contours.size() );
+    //std::vector<float>radius( contours.size() );
 
-    /* Search for flame and draw a red circle around it */
-    std::vector<KeyPoint> keypoints;
-    detector->detect( frame, keypoints);
-    drawKeypoints( frame, keypoints, frame, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+    for( int i = 0; i < contours.size(); i++ )
+    { approxPolyDP( Mat(contours[i]), contours_poly[i], 3, true );
+      boundRect[i] = boundingRect( Mat(contours_poly[i]) );
+      //minEnclosingCircle( (Mat)contours_poly[i], center[i], radius[i] );
+    }
+    /// Draw polygonal contour + bonding rects + circles
+    Mat drawing = Mat::zeros( frame.size(), CV_8UC3 );
+
     geometry_msgs::Point pointMsg;
-    if(keypoints.size() > 0) {
-      ROS_INFO_STREAM( "Flame coordinates: (" << keypoints[0].pt.x << ", " << keypoints[0].pt.y << ")" );
+    if(contours.size() > 0) {
+      Rect r = boundRect[0];
 
-      pointMsg.x = keypoints[0].pt.x;
+      ROS_INFO_STREAM( "Flame coordinates: (" << (r.x+(r.width/2.0)) << ", " << (r.y+(r.height/2.0)) << ")" );
+
+      pointMsg.x = (r.x+(r.width/2.0))
       pointMsg.y = keypoints[0].pt.y;
 
       pub.publish(pointMsg);
@@ -86,7 +103,7 @@ int main(int argc, char* argv[])
 
     pub.publish(pointMsg);
 
-    imshow("robovision", frame ); // show frame on computer output window
+    imshow("robovision", dst ); // show frame on computer output window
 
     /* Escape = kill program
     int keypress = waitKey(10)%255;
