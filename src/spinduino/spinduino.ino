@@ -164,5 +164,29 @@ void findHome(){
   CWtillHome();
   debugPrint("Done!");
   stepperOff();
+  delay(100);
+  for(int i =0; i < 30; i++) {
+    digitalWrite(STEP1, HIGH);
+    digitalWrite(STEP2, LOW);
+    digitalWrite(STEP3, LOW);
+    digitalWrite(STEP4, HIGH);
+    delay(DELAY);
+    digitalWrite(STEP1, HIGH);
+    digitalWrite(STEP2, HIGH);
+    digitalWrite(STEP3, LOW);
+    digitalWrite(STEP4, LOW);
+    delay(DELAY);
+    digitalWrite(STEP1, LOW);
+    digitalWrite(STEP2, HIGH);
+    digitalWrite(STEP3, HIGH);
+    digitalWrite(STEP4, LOW);
+    delay(DELAY);
+    digitalWrite(STEP1, LOW);
+    digitalWrite(STEP2, LOW);
+    digitalWrite(STEP3, HIGH);
+    digitalWrite(STEP4, HIGH);
+    delay(DELAY);
+  }
+  stepperOff();
   currentAngle = 0;
 }

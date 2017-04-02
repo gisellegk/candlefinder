@@ -78,7 +78,7 @@ void loop() {
     #ifdef CHATTER
     debugPrint(String(avg) + " " + String(totalAvg) + " " + String(timeon));
     #endif
-    if(avg > 5 && avg*.9 > totalAvg){
+    if(avg > 5 && avg*1.1 > totalAvg){
       timeon++;
     } else if (timeon > 0) {
       timeon -= 10;
