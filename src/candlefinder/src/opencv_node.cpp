@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
     if(contours.size() > 0) {
       Rect r = boundRect[0];
 
-      //ROS_INFO_STREAM( "#contours " << contours.size() << " Flame coordinates: (" << (r.x+(r.width/2.0)) << ", " << (r.y+(r.height/2.0)) << ")" );
+      ROS_INFO_STREAM( "Flame coordinates: (" << (r.x+(r.width/2.0)) << ", " << (r.y+(r.height/2.0)) << ")" );
 
       pointMsg.x = (r.x+(r.width/2.0));
       pointMsg.y = (r.y+(r.height/2.0));

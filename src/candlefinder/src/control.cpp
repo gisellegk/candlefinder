@@ -75,7 +75,8 @@ int main(int argc, char* argv[]){
 
   ros::Rate rate(10); //idk
   ROS_INFO_STREAM("let's do this!!!");
-  state = CAMSPIN;
+  state = FLAME;
+  ROS_INFO_STREAM("state: " << state);
 
   while(ros::ok()) {
     if(start){
@@ -170,20 +171,22 @@ int main(int argc, char* argv[]){
       */
       case FLAME:
         if(flame_x < 0) {
-          state = EXPLORE;
+          //state = EXPLORE;
+          ROS_INFO_STREAM("no flame");
           break;
         }
-        offset = (720/2) - flame_x; // a negative number will be to the right?
-        if(offset < 0) {
-          q.z = head_angle - 1;
+        offset = (640/2) - flame_x; // a negative number will be to the right?
+        if(offset < 0 && abs(offset) > 20) {
+          q.z = (head_angle+360 + 3)%360;
           headAnglePub.publish(q);
-        } else if (offset > 0) {
-          q.z = head_angle + 1;
+        } else if (offset > 0 && abs(offset) > 20) {
+          q.z = (head_angle+360 - 3)%360;
           headAnglePub.publish(q);
         } else {
           // candle is already centered!
           //figure out how far away the candle is based on y value
-          if(true) {
+          ROS_INFO_STREAM("candle is centered");
+          if(false) {
             t.angular.z = head_angle;
             t.linear.x = 1; //??????
             driveVectorPub.publish(t);
