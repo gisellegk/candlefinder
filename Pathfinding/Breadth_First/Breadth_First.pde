@@ -21,29 +21,30 @@ int[] map; // map array for holding data. data should be a color index
 ArrayList<Integer> pathPoints = new ArrayList<Integer>(); // List of points on the path.
 ArrayList<PVector> vectors = new ArrayList<PVector>(); // vectors from each pivot on the path. Pivots are not stored though... but 
 //vectors.get(0) is the direction the robot should travel
-PVector currentpose = new PVector(10,10); // actual position of the robot
-PVector targetpose = new PVector(10,10); // target postion set by mouse click
+PVector currentpose = new PVector(32,32); // actual position of the robot
+PVector targetpose = new PVector(32,32); // target postion set by mouse click
 
 void setup() {
-  size(500, 500); // windows size in pixels
+  size(404, 404); // windows size in pixels
   MAP_WIDTH = width/STEP; // set map size = window size / step size
   MAP_HIEGHT = height/STEP;
   map = new int[MAP_WIDTH*MAP_HIEGHT]; // set map size and fill with zeros
   strokeWeight(0);
   rectMode(CENTER);
-  frameRate(60);
+  frameRate(30);
 }
 void mousePressed() { // called on mouse press
   if(mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) // don't use the mouse positon if it's outside the window
    targetpose = new PVector(mouseX,+mouseY); // set the target pose in window pixels
 }
 void draw() { // periodic function. rate is set by frameRate(xx)
+
   map = new int[MAP_WIDTH*MAP_HIEGHT]; // clear map and fill with zeros
   vectors = new ArrayList<PVector>(); // clear vector list
   background(0);
-  genMap(); // draw gray walls
+  genMap2(); // draw gray walls
   inflate();  // draw the inflated walls in white
-  genMap(); // redraw the gray walls on top of the white so we can see them.
+  genMap2(); // redraw the gray walls on top of the white so we can see them.
   
   // now we pathfind
   // pathfind(current X, current Y, target X, target Y). These values should be in MAP units, not WINDOW units, so currentpose and targetpose are devided by STEP.
@@ -112,7 +113,7 @@ void drawMapLine(int angle, int x, int y, int length) {
  }
 }
 
-void genMap() {
+void genMap1() {
   drawMapLine(20, 10, 10, 30);
   drawMapLine(30, 25, 25, 25);
   drawMapLine(0, 25, 30, 80);
@@ -122,6 +123,87 @@ void genMap() {
   drawMapLine(120, 130, 50, 50);
   drawMapLine(50, 80, 100, 25);
   drawMapLine(20, 80, 10, 40);
+}
+
+//angle, x, y, length (all in px)
+//width and height = 0-99 pixels
+void genMap2() {
+  drawMapLine(0, 3,3 , 96);
+  drawMapLine(90, 3,3 , 96);
+  drawMapLine(0, 3, 99 , 96);
+  drawMapLine(90, 99,3 , 96);
+  drawMapLine(0, 3, 27 , 16);
+  drawMapLine(90, 19, 27 , 8);
+  drawMapLine(180, 19, 35 , 8);
+  drawMapLine(0, 3, 43 , 28);
+  drawMapLine(270, 31, 43, 8);
+  drawMapLine(0, 3, 63, 16);
+  drawMapLine(90, 19 , 59, 16);
+  drawMapLine(0, 11,11 , 24);
+  drawMapLine(90, 11,11 , 16);
+  drawMapLine(90, 35,11 , 8);
+  drawMapLine(0, 43,7 , 56);
+  drawMapLine(90, 63, 7 , 4);
+  drawMapLine(90, 79,7 , 4);
+  drawMapLine(0, 35,15 , 20);
+  drawMapLine(90, 55,15 , 20);
+  drawMapLine(0, 95,11 , 4);
+  drawMapLine(90, 71, 15, 4);
+  drawMapLine(0, 71, 19, 4);
+  drawMapLine(90,75,19,12);
+  drawMapLine(0,87,15,1);
+  drawMapLine(90,83,19,4);
+  drawMapLine(0,83,23,8);
+  drawMapLine(90,87,23,4);
+  drawMapLine(0,19,19,8);
+  drawMapLine(90,27,19,8);
+  drawMapLine(0,27,27,20);
+  drawMapLine(0,55,19,8);
+  drawMapLine(90,63,19,8);
+  drawMapLine(0,63,27,12);
+  drawMapLine(0,55,35,8);
+  drawMapLine(0,43,23,4);
+  drawMapLine(90,39,27,8);
+  drawMapLine(90,47,23,20);
+  drawMapLine(0,39,43,36);
+  drawMapLine(0,71,39,12);
+  drawMapLine(0,83,35,9);
+  drawMapLine(0,95,31,4);
+  drawMapLine(0,83,43,8);
+  drawMapLine(90,11,51,4);
+  drawMapLine(0,11,51,16);
+  drawMapLine(90,27,51,12);
+  drawMapLine(0,27,63,8);
+  drawMapLine(90,35,63,4);
+  drawMapLine(0,35,51,8);
+  drawMapLine(90,35,51,4);
+  drawMapLine(90,11,71,12);
+  drawMapLine(0,11,83,36);
+  drawMapLine(0,3,91,16);
+  drawMapLine(90,75,39,12);
+  drawMapLine(0,51,51,28);
+  drawMapLine(90,51,51,8);
+  drawMapLine(0,43,59,28);
+  drawMapLine(90,43,59,16);
+  drawMapLine(0,43,75,4);
+  drawMapLine(90,27,71,28);
+  drawMapLine(0,27,75,8);
+  drawMapLine(0,87,51,12);
+  drawMapLine(0,87,55,4);
+  drawMapLine(90,79,51,16);
+  drawMapLine(0,51,67,28);
+  drawMapLine(90,63,67,8);
+  drawMapLine(0,55,75,8);
+  drawMapLine(0,95,63,4);
+  drawMapLine(0,95,79,4);
+  drawMapLine(90,87,63,36);
+  drawMapLine(0,87,71,4);
+  drawMapLine(0,71,75,16);
+  drawMapLine(90,91,87,4);
+  drawMapLine(0,55,83,24);
+  drawMapLine(90,55,83,8);
+  drawMapLine(0,35,91,44);
+  drawMapLine(90,79,91,8);
 }
 
 void inflate() {
@@ -167,8 +249,12 @@ void pathFind(int start, int goal) {
     frontier.remove(0);
     if(currentPixel == goal || (escape == true && map[currentPixel] == BLACK)) {
       finalTarget = currentPixel;
-    } else {
-      //map[currentPixel] = GRAY1;
+    } //else if(map[currentPixel]==GRAY2 || map[currentPixel]==WHITE){
+      // ur stuck
+      
+    //}
+    else {
+      map[currentPixel] = GRAY1;
       int currentPixel_X = currentPixel/MAP_WIDTH;
       int currentPixel_Y = currentPixel%MAP_WIDTH;
       for(int i = 0; i < 4; i++) {
