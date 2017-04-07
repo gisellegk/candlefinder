@@ -1,7 +1,7 @@
 import java.util.*;
 final int STEP = 4;
 
-
+// define colors in a crappy way. These are the indices for the COLORS array bellow.
 final int BLACK = 0;
 final int WHITE = 1;
 final int BLUE = 2;
@@ -15,56 +15,76 @@ int MAP_WIDTH = 0;
 int MAP_HIEGHT = 0;
 int firstPoint = 0;
 
-int[] map;
 
-ArrayList<Integer> pathPoints = new ArrayList<Integer>();
-ArrayList<PVector> vectors = new ArrayList<PVector>();
-PVector robopose = new PVector(10,10);
+int[] map; // map array for holding data. data should be a color index
+
+ArrayList<Integer> pathPoints = new ArrayList<Integer>(); // List of points on the path.
+ArrayList<PVector> vectors = new ArrayList<PVector>(); // vectors from each pivot on the path. Pivots are not stored though... but 
+//vectors.get(0) is the direction the robot should travel
+PVector currentpose = new PVector(10,10); // actual position of the robot
+PVector targetpose = new PVector(10,10); // target postion set by mouse click
 
 void setup() {
-  size(500, 500);
-  MAP_WIDTH = width/STEP;
+  size(500, 500); // windows size in pixels
+  MAP_WIDTH = width/STEP; // set map size = window size / step size
   MAP_HIEGHT = height/STEP;
-  map = new int[MAP_WIDTH*MAP_HIEGHT];
+  map = new int[MAP_WIDTH*MAP_HIEGHT]; // set map size and fill with zeros
   strokeWeight(0);
   rectMode(CENTER);
-  frameRate(30);
+  frameRate(60);
 }
-void mousePressed() {
-  if(mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height)
-   robopose = new PVector(mouseX,+mouseY);
+void mousePressed() { // called on mouse press
+  if(mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) // don't use the mouse positon if it's outside the window
+   targetpose = new PVector(mouseX,+mouseY); // set the target pose in window pixels
 }
-void draw() {
-  map = new int[MAP_WIDTH*MAP_HIEGHT];
-  vectors = new ArrayList<PVector>();
+void draw() { // periodic function. rate is set by frameRate(xx)
+  map = new int[MAP_WIDTH*MAP_HIEGHT]; // clear map and fill with zeros
+  vectors = new ArrayList<PVector>(); // clear vector list
   background(0);
-  genMap();
-  inflate();
-  genMap();
-  //pathFind(1*MAP_WIDTH+1,10*MAP_WIDTH+100);
-  //pathFind(mouseX/STEP*MAP_WIDTH+mouseY/STEP,10*MAP_WIDTH+100);
-  pathFind(floor(robopose.x/(float)STEP)*MAP_WIDTH+floor(robopose.y/STEP),MAP_WIDTH/2*MAP_WIDTH+MAP_HIEGHT/2);
+  genMap(); // draw gray walls
+  inflate();  // draw the inflated walls in white
+  genMap(); // redraw the gray walls on top of the white so we can see them.
+  
+  // now we pathfind
+  // pathfind(current X, current Y, target X, target Y). These values should be in MAP units, not WINDOW units, so currentpose and targetpose are devided by STEP.
+  //pathFind(1*MAP_WIDTH+1,10*MAP_WIDTH+100); // example path find between two points
+  pathFind(floor(currentpose.x/(float)STEP)*MAP_WIDTH+floor(currentpose.y/STEP),floor(targetpose.x/(float)STEP)*MAP_WIDTH+floor(targetpose.y/STEP));
+  
+  // now we optimize the path using some basic line of sight ray trace thing
+  // this overwites the pathPoints with the new optimized path
+  // lineOfSight(COLOR Index)
   lineOfSight(PINK);
+  
+  
+  // draw all the map data in the window
   for (int y = 0; y < MAP_HIEGHT; y ++) {
     for (int x = 0; x < MAP_WIDTH; x ++) {  
       if(map[x*MAP_WIDTH+y] > 0){
-        fill(COLORS[map[x*MAP_WIDTH+y]]);
-        rect(x*STEP,y*STEP,STEP,STEP);
+        fill(COLORS[map[x*MAP_WIDTH+y]]); // set the fill color based on the map data
+        rect(x*STEP,y*STEP,STEP,STEP); // draw a map pixel
       }
     }
   }
+  
+  // draw currentpose as a green dot
   stroke(COLORS[GREEN]);  
   strokeWeight(8);
-  point(robopose.x-STEP/2,robopose.y-STEP/2);
-  strokeWeight(2);
+  point(currentpose.x-STEP/2,currentpose.y-STEP/2);
+  
+  // if there is a path and a first vector, draw it and move
   if(pathPoints.size()>0 && vectors.size()>0) {
+    // draw arrow
+    strokeWeight(2);
     arrow(round((pathPoints.get(0)/MAP_WIDTH)*STEP),round((pathPoints.get(0)%MAP_WIDTH)*STEP),round((pathPoints.get(0)/MAP_WIDTH+vectors.get(0).x*10)*STEP),round((pathPoints.get(0)%MAP_WIDTH+vectors.get(0).y*10)*STEP));
-    strokeWeight(6);
-    int distance = pathPoints.size();
-    int speed = 1;
-    if(distance < 40)
-       speed = floor(distance*speed/40.0)+1;      
-    robopose = new PVector(robopose.x+vectors.get(0).x*speed,robopose.y+vectors.get(0).y*speed);
+    
+    int distance = pathPoints.size(); // distance is the legth of the path in pixels
+    
+    // set a speed
+    int speed = 5;
+    if(distance < 40) // slow down if closer than 40px
+       speed = floor(distance*speed/40.0)+1;
+    // now move in the direction that vector.get(0) is pointing
+    currentpose = new PVector(currentpose.x+vectors.get(0).x*speed,currentpose.y+vectors.get(0).y*speed);
   }
   noStroke();
 }
@@ -101,6 +121,7 @@ void genMap() {
   drawMapLine(70, 30, 50, 60);
   drawMapLine(120, 130, 50, 50);
   drawMapLine(50, 80, 100, 25);
+  drawMapLine(20, 80, 10, 40);
 }
 
 void inflate() {
@@ -139,7 +160,7 @@ void pathFind(int start, int goal) {
   cameFrom[frontier.get(0)] = frontier.get(0);
   int finalTarget = -1;
   boolean escape = false;// (map[start] == WHITE || map[start] == GRAY2);    
-  println(escape);
+
   
   while(frontier.size() > 0 && finalTarget == -1){
     int currentPixel = frontier.get(0);
@@ -166,7 +187,6 @@ void pathFind(int start, int goal) {
         }
       }
     }
-    println(frontier.size());
     if(frontier.size() == 0 && finalTarget == -1) escape = true;
   }
   if(finalTarget!=-1 ) {
