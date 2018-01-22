@@ -1,7 +1,4 @@
-.catkin_workspace
-build/*
-devel/*
-src/hector_navigation
-src/hector_slam
-src/rplidar_ros
-src/costmap_2d
+*.*#*
+*.pro
+*.job
+*eagle.epf
