@@ -23,8 +23,8 @@
     <param name="map_update_distance_thresh" value="0.02"/>
     <param name="map_update_angle_thresh" value="0.1"/>
 
-    <param name="map_resolution" value="0.04"/>
-    <param name="map_size" value="350"/>
+    <param name="map_resolution" value="0.01"/>
+    <param name="map_size" value="500"/>
     <param name="map_start_x" value=".5"/>
     <param name="map_start_y" value=".5"/>
 
@@ -32,6 +32,7 @@
 
   <node pkg="candlefinder" type="camera_scan_map" name="camera_scan_map" />
   <node pkg="candlefinder" type="cost_map" name="cost_map" />
+  <node pkg="candlefinder" type="opencv_node" name="opencv_node" />
   <node pkg="candlefinder" type="navigation" name="navigation" />
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rplidar_ros)/rviz/slam.rviz" />
   <node pkg="rosserial_python" type="serial_node.py" name="ardu1" args="/dev/ttyUSB1" respawn="true"/>

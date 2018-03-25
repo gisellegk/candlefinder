@@ -75,7 +75,7 @@ int main(int argc, char* argv[]){
 
   ros::Rate rate(10); //idk
   ROS_INFO_STREAM("let's do this!!!");
-  state = FLAME;
+  state = CAMSPIN;
   ROS_INFO_STREAM("state: " << state);
 
   while(ros::ok()) {
@@ -113,42 +113,41 @@ int main(int argc, char* argv[]){
             int currentPixel_Y = pathPoints[1]%350;
             ROS_INFO_STREAM("Current :" << currentPixel_X << ", " << currentPixel_Y);
             ROS_INFO_STREAM("Next :" << nextPixel_X << ", " << nextPixel_Y);
-            if(nextPixel_X > currentPixel_X) {
+            if(nextPixel_Y > currentPixel_Y) {
               ROS_INFO_STREAM("down");
               geometry_msgs::Twist v;
               v.angular.z = 360+slam_angle;
-              v.linear.z = .5;
+              v.linear.x = -.7;
               driveVectorPub.publish(v);
-            } else if (nextPixel_X < currentPixel_X) {
+            } else if (nextPixel_Y < currentPixel_Y) {
               ROS_INFO_STREAM("up");
               geometry_msgs::Twist v;
               v.angular.z = 360+slam_angle;
-              v.linear.z = .5;
+              v.linear.x = .7;
               driveVectorPub.publish(v);
-            } else if (nextPixel_Y > currentPixel_Y) {
+            } else if (nextPixel_X > currentPixel_X) {
               ROS_INFO_STREAM("Left");
               geometry_msgs::Twist v;
               v.angular.z = 360+slam_angle+90;
-              v.linear.z = .5;
+              v.linear.x = -.7;
               driveVectorPub.publish(v);
-            } else if (nextPixel_Y < currentPixel_Y) {
+            } else if (nextPixel_X < currentPixel_X) {
               ROS_INFO_STREAM("right");
               geometry_msgs::Twist v;
               v.angular.z = 360+slam_angle+90;
-              v.linear.z = .5;
+              v.linear.x = .7;
               driveVectorPub.publish(v);
             }
           }
         } else {
           ROS_INFO_STREAM("No map");
-          ROS_INFO_STREAM("right");
           geometry_msgs::Twist v;
           v.angular.z = 360+slam_angle;
           v.linear.z = 0;
           driveVectorPub.publish(v);
         }
         //this bit noodles the head around in the direction the base is pointing. hopefully.
-        if(flame_x >= 0) {
+        if(flame_x >= 0 && false) {
           state = FLAME;
           geometry_msgs::Twist v;
           v.angular.z = base_angle;
