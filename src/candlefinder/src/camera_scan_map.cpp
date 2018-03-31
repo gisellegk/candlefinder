@@ -4,6 +4,8 @@
 #include <nav_msgs/MapMetaData.h>
 #include "camera_scan_map.h"
 
+#define maxRange 100
+
 std::vector<int8_t> hector_map;
 std::vector<int8_t> cam_scan(1,-1);
 
@@ -41,7 +43,7 @@ int main(int argc, char* argv[]){
     int angle = headAngle - robotAngle;
 
     if(robotIndex != 0) {
-      int numRays = 100;
+      int numRays = 300;
       for(int ray = 0 - (numRays/2); ray < numRays/2; ray++){
         int a = angle + (60.0 / numRays)* ray;
         float rise = sin(a/57.6);
@@ -50,7 +52,6 @@ int main(int argc, char* argv[]){
         int currentPixel = robotIndex;
 
         //FOR EACH PIXEL IN THIS LINE
-        int maxRange = 25; //idk
         for(int i = 1; m[currentPixel] != 100 && m[currentPixel] >= 0 && i < maxRange; i++) {
           cam_scan[currentPixel] = 1; // 1 = scanned. i guess. idk.
           currentPixel = robotIndex + (int)((info.width*round(i * run) + round(i*rise)));
