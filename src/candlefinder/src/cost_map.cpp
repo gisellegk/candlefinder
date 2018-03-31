@@ -27,6 +27,7 @@ int main(int argc, char* argv[]){
   info.width = 1;
   info.height = 1;
 
+  int cost_radiusSQ = cost_radius * cost_radius;
   while(ros::ok()) {
     cost_map = hector_map;
 
@@ -38,10 +39,8 @@ int main(int argc, char* argv[]){
         int i_y = i % info.width;
 
         for(int x = 0; x < cost_radius; x++) {
-          // 0, 1, 2, 3, 4, 5
           for(int y = 1; y < cost_radius ; y++) {
-            // 1, 2, 3, 4, 5
-            if((x < 2) || (x < cost_radius-1 && y < cost_radius-1) || (y < 2)){
+            if(x * x + y * y < cost_radiusSQ){
               changePixel(i_x+x, i_y+y);//q1
               changePixel(i_x-y, i_y+x);//q2
               changePixel(i_x-x, i_y-y);//q3
@@ -64,7 +63,7 @@ int main(int argc, char* argv[]){
 
 void changePixel(int x, int y){
   int coord = info.width*x+y;
-  if(coord < info.width*info.height){
+  if(x > 0 && y > 0 && coord < info.width*info.height){
     cost_map[coord] = 99;
   }
 }
