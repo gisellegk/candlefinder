@@ -7,6 +7,9 @@ import cv2
 import numpy as np
 import Queue
 import platform
+import rospy
+from std_msgs.msg import String
+from geometry_msgs.msg import Point
 
 try:
   if platform.system() == 'Darwin':
@@ -190,6 +193,10 @@ def main():
   devh = POINTER(uvc_device_handle)()
   ctrl = uvc_stream_ctrl()
 
+  pub = rospy.Publisher('candle_loc', Point, queue_size=10)
+  rospy.init_node('talker', anonymous=True)
+  rate = rospy.Rate(10)
+
   res = libuvc.uvc_init(byref(ctx), 0)
   if res < 0:
     print "uvc_init error"
@@ -219,21 +226,28 @@ def main():
         exit(1)
 
       try:
-        while True:
+        while not rospy.is_shutdown():
           data = q.get(True, 500)
           if data is None:
             break
           data = cv2.resize(data[:,:], (640, 480))
           minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
           """img = raw_to_8bit(data)"""
-	  data = ((data - 1000) * 10 -50000) * 2
-	  img=data
+          data = ((data - 1000) * 10 -50000) * 2
+          img=data
           """display_temperature(img, minVal, minLoc, (255, 0, 0))"""
           display_temperature(img, maxVal, maxLoc, (0, 0, 255))
-	  if maxVal > 5000:
-	    cv2.circle(data, maxLoc, 20, (255, 255, 255), 4)
+          if maxVal > 5000:
+            cv2.circle(data, maxLoc, 20, (255, 255, 255), 4)
+            flameP = Point()
+            flameP.x = maxLoc[0]
+            flameP.y = maxLoc[1]
+            pub.publish(flameP)
+
           cv2.imshow('Lepton 2.5 Radiometry', img)
           cv2.waitKey(1)
+
+          rate.sleep()
 
         cv2.destroyAllWindows()
       finally:
