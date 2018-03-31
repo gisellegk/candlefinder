@@ -9,9 +9,10 @@ void changePixel(int, int);
 std::vector<int8_t> hector_map;
 std::vector<int8_t> cost_map(1,-1);
 
+int cost_radius = 18;
+
 nav_msgs::MapMetaData info;
 
-//5 pixel radius sorry guys
 
 int main(int argc, char* argv[]){
   ros::init(argc, argv, "cost_map_node");
@@ -36,11 +37,11 @@ int main(int argc, char* argv[]){
         int i_x = floor(i / info.width);
         int i_y = i % info.width;
 
-        for(int x = 0; x < 5; x++) {
-          // 0, 1, 2, 3, 4
-          for(int y = 1; y < 5; y++) {
-            // 1, 2, 3, 4
-            if((x < 2) || (x < 4 && y < 4) || (y < 2)){
+        for(int x = 0; x < cost_radius; x++) {
+          // 0, 1, 2, 3, 4, 5
+          for(int y = 1; y < cost_radius ; y++) {
+            // 1, 2, 3, 4, 5
+            if((x < 2) || (x < cost_radius-1 && y < cost_radius-1) || (y < 2)){
               changePixel(i_x+x, i_y+y);//q1
               changePixel(i_x-y, i_y+x);//q2
               changePixel(i_x-x, i_y-y);//q3

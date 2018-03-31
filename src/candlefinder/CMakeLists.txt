@@ -26,15 +26,7 @@ find_package(catkin REQUIRED roscpp geometry_msgs nav_msgs)
 ##   * add a build_depend and a run_depend tag for each package in MSG_DEP_SET
 ##   * If MSG_DEP_SET isn't empty the following dependency has been pulled in
 ##     but can be declared for certainty nonetheless:
-##     * add a run_depend tag for "message_runtime"
-## * In this file (CMakeLists.txt):
-##   * add "message_generation" and every package in MSG_DEP_SET to
-##     find_package(catkin REQUIRED COMPONENTS ...)
-##   * add "message_runtime" and every package in MSG_DEP_SET to
-##     catkin_package(CATKIN_DEPENDS ...)
-##   * uncomment the add_*_files sections below as needed
-##     and list every .msg/.srv/.action file to be processed
-##   * uncomment the generate_messages entry below
+##     * add a run_depend tag for "message_runtime"source /opt/ros/fuerte
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
@@ -128,7 +120,6 @@ link_directories(${OPENCV_LIBRARY_DIRS})
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/candlefinder_node.cpp)
 
-add_executable(opencv_node src/opencv_node.cpp)
 add_executable(robot_teleop src/robot_teleop.cpp)
 add_executable(camera_scan_map src/camera_scan_map.cpp)
 add_executable(cost_map src/cost_map.cpp)
@@ -148,10 +139,7 @@ add_executable(control src/control.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(opencv_node
-  ${catkin_LIBRARIES}
-)
-target_link_libraries(opencv_node ${OPENCV_LIBRARIES})
+
 target_link_libraries(robot_teleop ${catkin_LIBRARIES})
 target_link_libraries(camera_scan_map ${catkin_LIBRARIES})
 target_link_libraries(cost_map ${catkin_LIBRARIES})
