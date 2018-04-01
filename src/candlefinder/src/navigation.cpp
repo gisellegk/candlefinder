@@ -3,7 +3,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Quaternion.h>
 #include <nav_msgs/MapMetaData.h>
-//#include <std_msgs/UInt16MultiArray.h>
+#include <std_msgs/Int16.h>
 #include <queue>
 #include "navigation.h"
 #include <math.h>
@@ -27,8 +27,7 @@ int main(int argc, char* argv[]){
   ros::NodeHandle nh;
 
   ros::Publisher nav_map_pub = nh.advertise<nav_msgs::OccupancyGrid>("nav_map", 1000);
-  ros::Publisher target_vector_pub = nh.advertise<geometry_msgs::PoseStamped>("target_vector", 1000);
-  //ros::Publisher path_plan_pub = nh.advertise<std_msgs::UInt16MultiArray>("path_plan", 1000);
+  ros::Publisher target_vector_pub = nh.advertise<std_msgs::Int16>("target_vector", 1000);
   ros::Subscriber mapSub = nh.subscribe("cost_map", 1000, &saveMap);
   ros::Subscriber camSub = nh.subscribe("camera_scan_map", 1000, &saveCamMap);
   ros::Subscriber poseSub = nh.subscribe("slam_out_pose", 1000, &savePose);
@@ -91,13 +90,12 @@ int main(int argc, char* argv[]){
     }
 
     int numberOfPathPoints = pathPoints.size();
-    ROS_INFO_STREAM(numberOfPathPoints);
     if(numberOfPathPoints > 0) {
       std::vector<uint16_t> newPathPoints;
       int s = 0;
 
       while(s < numberOfPathPoints - 1) {
-        ROS_INFO_STREAM("s: " << s);
+        //ROS_INFO_STREAM("s: " << s);
         for(int e = numberOfPathPoints - 1; e > s; e--) {
           bool lineofsight = false;
           float start_X = pathPoints[s]/info.width;
@@ -140,11 +138,20 @@ int main(int argc, char* argv[]){
           }
           if(lineofsight) {
             geometry_msgs::Pose newVector;
-            ROS_INFO_STREAM("posX: " << (float)start_X << " posY: " << (float)start_Y);
-            ROS_INFO_STREAM("tarX: " << (float)(robotPos/info.width) << " tarY: " <<  (float)(robotPos%info.width));
-            newVector.position.x = (start_X - (info.width/2.0)) * info.resolution;
-            newVector.position.y = (start_Y - (info.height/2.0)) * info.resolution;
+            //ROS_INFO_STREAM("posX: " << (float)start_X << " posY: " << (float)start_Y);
+            //ROS_INFO_STREAM("tarX: " << (float)(robotPos/info.width) << " tarY: " <<  (float)(robotPos%info.width));
+            //newVector.position.x = (start_X - (info.width/2.0)) * info.resolution;
+            //newVector.position.y = (start_Y - (info.height/2.0)) * info.resolution;
+            newVector.position = pose.position;
             newVector.orientation = toQuaternion(0, 0, angle);
+            if(vectors.size() == 0){
+              std_msgs::Int16 msg;
+              int targetAngle = (((int)((angle*57.295779-90)+360)%360) - robotAngle + 360) % 360;
+              msg.data = targetAngle;
+              target_vector_pub.publish(msg);
+              //ROS_INFO_STREAM("angle " << targetAngle);
+              //ROS_INFO_STREAM("robot angle: " << robotAngle << "deg target angle: " << (int)((angle*57.295779-90)+360)%360 << "deg");
+            }
             vectors.push_back(newVector);
             for(int dd = 0; dd < distance; dd++){
              int x = round(start_X + dd * cos(angle));
@@ -158,13 +165,6 @@ int main(int argc, char* argv[]){
       }
     }
 
-    if(vectors.size() > 0) {
-      geometry_msgs::PoseStamped firstVector;
-      firstVector.pose = vectors[0];
-      firstVector.header.frame_id = "/map";
-      firstVector.header.stamp = ros::Time::now();
-      target_vector_pub.publish(firstVector);
-    }
     nav_msgs::OccupancyGrid c;
     c.data = m;
     c.info = info;
@@ -197,7 +197,7 @@ void saveCamMap(const nav_msgs::OccupancyGrid& msg){
 
 void savePose(const geometry_msgs::PoseStamped& msg){
   pose = msg.pose;
-  robotAngle = round(atan2(2*(pose.orientation.w*pose.orientation.z + pose.orientation.x*pose.orientation.y), 1-2*(pose.orientation.z*pose.orientation.z))*57.3);
+  robotAngle = (int)(360 - round(atan2(2*(pose.orientation.w*pose.orientation.z + pose.orientation.x*pose.orientation.y), 1-2*(pose.orientation.z*pose.orientation.z))*57.3))%360;
   robot_row = (int)((pose.position.y / info.resolution) + (info.height/2.0));
   robot_col = (int)((pose.position.x / info.resolution) + (info.width/2.0));
 }
