@@ -230,7 +230,8 @@ def main():
           data = q.get(True, 500)
           if data is None:
             break
-          data = cv2.resize(data[:,:], (640, 480))
+          cv2.transpose(data, data)
+          cv2.flip(data, data, +1)
           minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
           """img = raw_to_8bit(data)"""
           data = ((data - 1000) * 10 -50000) * 2
@@ -244,7 +245,8 @@ def main():
             flameP.y = maxLoc[1]
             pub.publish(flameP)
 
-          cv2.imshow('Lepton 2.5 Radiometry', img)
+          imgScaled = cv2.resize(img[:,:], (640, 480))
+          cv2.imshow('Lepton 2.5 Radiometry', imgScaled)
           cv2.waitKey(1)
 
           rate.sleep()
