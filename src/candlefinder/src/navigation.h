@@ -9,3 +9,4 @@ void saveMap(const nav_msgs::OccupancyGrid&);
 void saveCamMap(const nav_msgs::OccupancyGrid&);
 void savePose(const geometry_msgs::PoseStamped&);
 int XYtoCords(int, int);
+geometry_msgs::Quaternion toQuaternion(double, double, double);

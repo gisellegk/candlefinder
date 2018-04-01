@@ -3,7 +3,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Quaternion.h>
 #include <nav_msgs/MapMetaData.h>
-#include <std_msgs/UInt16MultiArray.h>
+//#include <std_msgs/UInt16MultiArray.h>
 #include <queue>
 #include "navigation.h"
 #include <math.h>
@@ -27,7 +27,8 @@ int main(int argc, char* argv[]){
   ros::NodeHandle nh;
 
   ros::Publisher nav_map_pub = nh.advertise<nav_msgs::OccupancyGrid>("nav_map", 1000);
-  ros::Publisher path_plan_pub = nh.advertise<std_msgs::UInt16MultiArray>("path_plan", 1000);
+  ros::Publisher target_vector_pub = nh.advertise<geometry_msgs::PoseStamped>("target_vector", 1000);
+  //ros::Publisher path_plan_pub = nh.advertise<std_msgs::UInt16MultiArray>("path_plan", 1000);
   ros::Subscriber mapSub = nh.subscribe("cost_map", 1000, &saveMap);
   ros::Subscriber camSub = nh.subscribe("camera_scan_map", 1000, &saveCamMap);
   ros::Subscriber poseSub = nh.subscribe("slam_out_pose", 1000, &savePose);
@@ -41,7 +42,7 @@ int main(int argc, char* argv[]){
 
   while(ros::ok()) {
     std::vector<int8_t> m(info.width*info.height,-1);// = nav_map;
-    std::vector<uint16_t> pathPoints;
+    std::vector<int> pathPoints;
     std::vector<geometry_msgs::Pose> vectors;
     int robotPos = info.width*robot_row+robot_col;
     if(nav_map.size() != 1 && cam_map.size() != 1 &&  robotPos > 0) {
@@ -54,7 +55,7 @@ int main(int argc, char* argv[]){
       while(frontier.size() > 0 && finalTarget == -1) {
         int currentPixel =  frontier.front();
         frontier.pop();
-        ROS_INFO_STREAM("camvalhere " << (cam_map[currentPixel] != 1));
+        //ROS_INFO_STREAM("camvalhere " << (cam_map[currentPixel] != 1));
         if(cam_map[currentPixel] != 1) {
           finalTarget = currentPixel;
         } else {
@@ -68,6 +69,7 @@ int main(int argc, char* argv[]){
             int run = round(cos(a/57.6)); // hah radians
             int next = XYtoCords(currentPixel_X + run, currentPixel_Y + rise);
             if(came_from[next] == -1) {
+              //ROS_INFO_STREAM("cm: " << (float)cost_map[next]);
               if(cost_map[next] <= 50 && cost_map[next] >= 0) {
                 frontier.push(next);
               }
@@ -82,20 +84,25 @@ int main(int argc, char* argv[]){
           pathPoints.insert(pathPoints.begin(),linePos);
           m[linePos] = 50;
           linePos = came_from[linePos];
+          int x = linePos/info.width;
+          int y = linePos%info.width;
         } while(linePos != robotPos);
       }
     }
 
     int numberOfPathPoints = pathPoints.size();
+    ROS_INFO_STREAM(numberOfPathPoints);
     if(numberOfPathPoints > 0) {
       std::vector<uint16_t> newPathPoints;
       int s = 0;
 
       while(s < numberOfPathPoints - 1) {
+        ROS_INFO_STREAM("s: " << s);
         for(int e = numberOfPathPoints - 1; e > s; e--) {
-          bool lineOfSight = false;
+          bool lineofsight = false;
           float start_X = pathPoints[s]/info.width;
           float start_Y = pathPoints[s]%info.width;
+          //ROS_INFO_STREAM("PS x: " << start_X << " y: " << start_Y << " p: " << XYtoCords(start_X, start_Y));
           float end_X = pathPoints[e]/info.width;
           float end_Y = pathPoints[e]%info.width;
 
@@ -118,9 +125,11 @@ int main(int argc, char* argv[]){
           }
 
           int distance = ceil(sqrt(pow(diff_Y,2)+pow(diff_X,2)));
-          for(int m = 0; m < distance+1; m++) {
-            int x = round(start_X + m * cos(angle));
-            int y = round(start_Y + m * sin(angle));
+          for(int dd = 0; dd < distance+1; dd++) {
+            int x = round(start_X + dd * cos(angle));
+            int y = round(start_Y + dd * sin(angle));
+            //ROS_INFO_STREAM("x: " << x << " y: " << y << " d: " << distance << " p: " << XYtoCords(x,y));
+            //ROS_INFO_STREAM("cm: " << (float)cost_map[XYtoCords(x,y)]);
             if(x < 0 ||  x > info.width-1 || y < 0 || y> info.height-1) continue;
             if(cost_map[x*info.width + y] == 99) {
               break;
@@ -131,32 +140,41 @@ int main(int argc, char* argv[]){
           }
           if(lineofsight) {
             geometry_msgs::Pose newVector;
-            newVector.position.x = start_X;
-            newVector.position.y = start_Y;
+            ROS_INFO_STREAM("posX: " << (float)start_X << " posY: " << (float)start_Y);
+            ROS_INFO_STREAM("tarX: " << (float)(robotPos/info.width) << " tarY: " <<  (float)(robotPos%info.width));
+            newVector.position.x = (start_X - (info.width/2.0)) * info.resolution;
+            newVector.position.y = (start_Y - (info.height/2.0)) * info.resolution;
             newVector.orientation = toQuaternion(0, 0, angle);
             vectors.push_back(newVector);
             for(int dd = 0; dd < distance; dd++){
              int x = round(start_X + dd * cos(angle));
              int y = round(start_Y + dd * sin(angle));
-             m[x*MAP_WIDTH+y] = 200;
-             newPathPoints.add(x*info.width+y);
+             m[x*info.width+y] = 100;
+             newPathPoints.push_back(x*info.width+y);
            }
+           s = e;
           }
         }
       }
     }
-  }
 
+    if(vectors.size() > 0) {
+      geometry_msgs::PoseStamped firstVector;
+      firstVector.pose = vectors[0];
+      firstVector.header.frame_id = "/map";
+      firstVector.header.stamp = ros::Time::now();
+      target_vector_pub.publish(firstVector);
+    }
     nav_msgs::OccupancyGrid c;
     c.data = m;
     c.info = info;
     nav_map_pub.publish(c);
-    std_msgs::UInt16MultiArray p;
-    p.data = pathPoints;
-    path_plan_pub.publish(p);
+    //std_msgs::UInt16MultiArray p;
+    //p.data = pathPoints;
+    //path_plan_pub.publish(p);
     ros::spinOnce();
     rate.sleep();
-}
+  }
 
 }
 
@@ -188,8 +206,8 @@ int XYtoCords(int x, int y) {
   return x*info.width + y;
 }
 
-geometry_msgs:Quaternion toQuaternion(double pitch, double roll, double yaw) {
-	geometry_msgs:Quaternion q;
+geometry_msgs::Quaternion toQuaternion(double pitch, double roll, double yaw) {
+	geometry_msgs::Quaternion q;
         // Abbreviations for the various angular functions
 	double cy = cos(yaw * 0.5);
 	double sy = sin(yaw * 0.5);
@@ -198,9 +216,9 @@ geometry_msgs:Quaternion toQuaternion(double pitch, double roll, double yaw) {
 	double cp = cos(pitch * 0.5);
 	double sp = sin(pitch * 0.5);
 
-	q.w() = cy * cr * cp + sy * sr * sp;
-	q.x() = cy * sr * cp - sy * cr * sp;
-	q.y() = cy * cr * sp + sy * sr * cp;
-	q.z() = sy * cr * cp - cy * sr * sp;
+	q.w = cy * cr * cp + sy * sr * sp;
+	q.x = cy * sr * cp - sy * cr * sp;
+	q.y = cy * cr * sp + sy * sr * cp;
+	q.z = sy * cr * cp - cy * sr * sp;
 	return q;
 }
