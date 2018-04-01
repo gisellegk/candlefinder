@@ -1,10 +1,12 @@
 #include <ros/ros.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Quaternion.h>
 #include <nav_msgs/MapMetaData.h>
 #include <std_msgs/UInt16MultiArray.h>
 #include <queue>
 #include "navigation.h"
+#include <math.h>
 
 std::vector<int8_t> cost_map;
 std::vector<int8_t> cam_map(1,-1);
@@ -40,6 +42,7 @@ int main(int argc, char* argv[]){
   while(ros::ok()) {
     std::vector<int8_t> m(info.width*info.height,-1);// = nav_map;
     std::vector<uint16_t> pathPoints;
+    std::vector<geometry_msgs::Pose> vectors;
     int robotPos = info.width*robot_row+robot_col;
     if(nav_map.size() != 1 && cam_map.size() != 1 &&  robotPos > 0) {
       int finalTarget = -1;
@@ -77,11 +80,72 @@ int main(int argc, char* argv[]){
         int linePos = finalTarget;
         do{
           pathPoints.insert(pathPoints.begin(),linePos);
-          m[linePos] = 100;
+          m[linePos] = 50;
           linePos = came_from[linePos];
         } while(linePos != robotPos);
       }
     }
+
+    int numberOfPathPoints = pathPoints.size();
+    if(numberOfPathPoints > 0) {
+      std::vector<uint16_t> newPathPoints;
+      int s = 0;
+
+      while(s < numberOfPathPoints - 1) {
+        for(int e = numberOfPathPoints - 1; e > s; e--) {
+          bool lineOfSight = false;
+          float start_X = pathPoints[s]/info.width;
+          float start_Y = pathPoints[s]%info.width;
+          float end_X = pathPoints[e]/info.width;
+          float end_Y = pathPoints[e]%info.width;
+
+          float diff_X = end_X - start_X;
+          float diff_Y = end_Y - start_Y;
+
+          float angle = atan(diff_Y/diff_X);
+
+          if(diff_X > 0 && diff_Y > 0) {
+            //first quadrant
+          } else if(diff_X < 0 && diff_Y > 0) {
+            //second quadrant
+            angle+=M_PI;
+          } else if(diff_X < 0 && diff_Y <= 0) {
+            //third quadrant
+            angle+=M_PI;
+          } else if(diff_X > 0 && diff_Y <= 0) {
+            //fourth quadrant
+            angle+=2*M_PI;
+          }
+
+          int distance = ceil(sqrt(pow(diff_Y,2)+pow(diff_X,2)));
+          for(int m = 0; m < distance+1; m++) {
+            int x = round(start_X + m * cos(angle));
+            int y = round(start_Y + m * sin(angle));
+            if(x < 0 ||  x > info.width-1 || y < 0 || y> info.height-1) continue;
+            if(cost_map[x*info.width + y] == 99) {
+              break;
+            } else {
+              if(x == end_X && y == end_Y)
+                lineofsight = true;
+            }
+          }
+          if(lineofsight) {
+            geometry_msgs::Pose newVector;
+            newVector.position.x = start_X;
+            newVector.position.y = start_Y;
+            newVector.orientation = toQuaternion(0, 0, angle);
+            vectors.push_back(newVector);
+            for(int dd = 0; dd < distance; dd++){
+             int x = round(start_X + dd * cos(angle));
+             int y = round(start_Y + dd * sin(angle));
+             m[x*MAP_WIDTH+y] = 200;
+             newPathPoints.add(x*info.width+y);
+           }
+          }
+        }
+      }
+    }
+  }
 
     nav_msgs::OccupancyGrid c;
     c.data = m;
@@ -122,4 +186,21 @@ void savePose(const geometry_msgs::PoseStamped& msg){
 
 int XYtoCords(int x, int y) {
   return x*info.width + y;
+}
+
+geometry_msgs:Quaternion toQuaternion(double pitch, double roll, double yaw) {
+	geometry_msgs:Quaternion q;
+        // Abbreviations for the various angular functions
+	double cy = cos(yaw * 0.5);
+	double sy = sin(yaw * 0.5);
+	double cr = cos(roll * 0.5);
+	double sr = sin(roll * 0.5);
+	double cp = cos(pitch * 0.5);
+	double sp = sin(pitch * 0.5);
+
+	q.w() = cy * cr * cp + sy * sr * sp;
+	q.x() = cy * sr * cp - sy * cr * sp;
+	q.y() = cy * cr * sp + sy * sr * cp;
+	q.z() = sy * cr * cp - cy * sr * sp;
+	return q;
 }
