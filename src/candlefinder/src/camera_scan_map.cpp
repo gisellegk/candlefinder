@@ -5,7 +5,7 @@
 #include "camera_scan_map.h"
 
 #define MAX_RANGE 100 // max camera range in pixels
-#define HFOV 50 // 50 degree horizontal field of view
+#define HFOV 38 // 50 degree horizontal field of view
 
 std::vector<int8_t> hector_map;
 std::vector<int8_t> cam_scan(1,-1);
@@ -46,7 +46,7 @@ int main(int argc, char* argv[]){
     if(robotIndex != 0) {
       int numRays = 100;
       for(int ray = 0 - (numRays/2); ray < numRays/2; ray++){
-        int a = angle + (HFOV / numRays)* ray;
+        int a = angle + (HFOV / (double) numRays)* ray;
         float rise = sin(a/57.6);
         float run = cos(a/57.6); // hah radians
 

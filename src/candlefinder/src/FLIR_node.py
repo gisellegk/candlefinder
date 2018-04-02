@@ -182,7 +182,7 @@ def raw_to_8bit(data):
 
 def display_temperature(img, val_k, loc, color):
   """val = ktof(val_k)"""
-  cv2.putText(img,"{0:.1f}".format(val_k), loc, cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+  cv2.putText(img,"{0:.0f}".format(val_k), loc, cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
   x, y = loc
   cv2.line(img, (x - 2, y), (x + 2, y), color, 1)
   cv2.line(img, (x, y - 2), (x, y + 2), color, 1)
@@ -230,8 +230,8 @@ def main():
           data = q.get(True, 500)
           if data is None:
             break
-          cv2.transpose(data, data)
-          cv2.flip(data, data, +1)
+          data = cv2.transpose(data)
+          data = cv2.flip(data, +1)
           minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
           """img = raw_to_8bit(data)"""
           data = ((data - 1000) * 10 -50000) * 2
@@ -239,7 +239,7 @@ def main():
           """display_temperature(img, minVal, minLoc, (255, 0, 0))"""
           display_temperature(img, maxVal, maxLoc, (0, 0, 255))
           if maxVal > 5000:
-            cv2.circle(data, maxLoc, 20, (255, 255, 255), 4)
+            cv2.circle(data, maxLoc, 10, (255, 255, 255), 1)
             flameP = Point()
             flameP.x = maxLoc[0]
             flameP.y = maxLoc[1]
