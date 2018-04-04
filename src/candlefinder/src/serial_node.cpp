@@ -6,24 +6,6 @@
 #include "serial/serial.h"
 #include <string>
 
-/*
-read and write to serial port.
-/dev/ttyUSB1
-9600
-
-Read and publish:
-  start_bool
-  base_pose
-  current_head_angle
-  chatter
-
-Process and Write to serial:
-  drive_vector
-  target_head_angle
-  extinguish
-
-*/
-
 int driveAngle = 0; // degrees, 0 to 360
 int driveSpeed = 0; // -1 to 1
 
@@ -32,19 +14,32 @@ int targetHeadAngle = 0; // degrees
 bool extinguishFlag = false;
 serial::Serial * my_serial;
 
-void saveDriveVector(const geometry_msgs::Twist& msg) {
-  driveAngle = msg.angular.z;
-  driveSpeed = msg.linear.x;
+bool writeSerial(std::string);
+
+void sendDriveVector(const geometry_msgs::Twist& msg) {
+  if(driveAngle != msg.angular.z) {
+    driveAngle = msg.angular.z;
+    writeSerial("a" + std::to_string(driveAngle));
+  }
+  if(driveSpeed != msg.linear.x) {
+    driveSpeed = msg.linear.x;
+    writeSerial("s" + std::to_string(driveSpeed));
+  }
 }
 
-void saveTargetHeadAngle(const geometry_msgs::Quaternion& msg) {
-  targetHeadAngle = msg.z;
+void sendTargetHeadAngle(const geometry_msgs::Quaternion& msg) {
+  if(targetHeadAngle != msg.z) {
+    targetHeadAngle = msg.z;
+    writeSerial("h" + std::to_string(targetHeadAngle));
+  }
 }
 
-void saveExtinguish(const std_msgs::Bool& msg){
-  extinguishFlag = msg.data;
+void sendExtinguish(const std_msgs::Bool& msg){
+  if(extinguishFlag != msg.data){
+    extinguishFlag = msg.data;
+    writeSerial("e" + std::to_string(extinguishFlag));
+  }
 }
-
 
 std::string readSerial(){
   bool open = my_serial->isOpen();
@@ -57,6 +52,7 @@ std::string readSerial(){
 }
 
 bool writeSerial(std::string msg){
+  msg = msg + "\n";
   bool open = my_serial->isOpen();
   if(open){
     my_serial->write(msg);
@@ -73,9 +69,9 @@ int main(int argc, char* argv[]){
   ros::Publisher current_head_angle_pub = nh.advertise<geometry_msgs::Quaternion>("current_head_angle", 1000);
   ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("chatter", 1000);
 
-  ros::Subscriber drive_vector_sub = nh.subscribe("drive_vector", 1000, &saveDriveVector);
-  ros::Subscriber target_head_angle_sub = nh.subscribe("target_head_angle", 1000, &saveTargetHeadAngle);
-  ros::Subscriber extinguish_sub = nh.subscribe("extinguish", 1000, &saveExtinguish);
+  ros::Subscriber drive_vector_sub = nh.subscribe("drive_vector", 1000, &sendDriveVector);
+  ros::Subscriber target_head_angle_sub = nh.subscribe("target_head_angle", 1000, &sendTargetHeadAngle);
+  ros::Subscriber extinguish_sub = nh.subscribe("extinguish", 1000, &sendExtinguish);
 
   ros::Rate rate(10); //idk
 
@@ -84,7 +80,9 @@ int main(int argc, char* argv[]){
   my_serial = new serial::Serial(port, baud, serial::Timeout::simpleTimeout(1000));
 
   while(ros::ok()) {
-    ROS_INFO_STREAM("Serial port recived " << readSerial());
+    //ROS_INFO_STREAM("Serial port recived " << readSerial());
+    std::string msg = readSerial();
+
 
     ros::spinOnce();
     rate.sleep();

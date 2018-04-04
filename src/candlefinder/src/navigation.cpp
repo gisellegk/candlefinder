@@ -27,7 +27,7 @@ int main(int argc, char* argv[]){
   ros::NodeHandle nh;
 
   ros::Publisher nav_map_pub = nh.advertise<nav_msgs::OccupancyGrid>("nav_map", 1000);
-  ros::Publisher target_vector_pub = nh.advertise<std_msgs::Int16>("target_vector", 1000);
+  ros::Publisher exploration_target_angle_pub = nh.advertise<std_msgs::Int16>("exploration_target_angle", 1000);
   ros::Subscriber mapSub = nh.subscribe("cost_map", 1000, &saveMap);
   ros::Subscriber camSub = nh.subscribe("camera_scan_map", 1000, &saveCamMap);
   ros::Subscriber poseSub = nh.subscribe("slam_out_pose", 1000, &savePose);
@@ -150,7 +150,7 @@ int main(int argc, char* argv[]){
               int globalTargetAngle = ((int)(-(angle*57.295779-90)+360)%360);
               int targetAngle = (globalTargetAngle - robotAngle + 360) % 360;
               msg.data = targetAngle;
-              target_vector_pub.publish(msg);
+              exploration_target_angle_pub.publish(msg);
               //ROS_INFO_STREAM("robot angle: " << robotAngle << "deg, global target angle: " << globalTargetAngle << "deg");
               ROS_INFO_STREAM("target angle " << targetAngle);
             }
@@ -194,7 +194,7 @@ int main(int argc, char* argv[]){
       int globalTargetAngle = ((int)(-(angle*57.295779-90)+360)%360);
       int targetAngle = (globalTargetAngle - robotAngle + 360) % 360;
       msg.data = targetAngle;
-      target_vector_pub.publish(msg);
+      exploration_target_angle_pub.publish(msg);
       ROS_INFO_STREAM("SINGLE POINT: target angle " << targetAngle);
 
     }
