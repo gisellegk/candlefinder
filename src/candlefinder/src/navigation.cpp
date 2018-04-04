@@ -44,7 +44,7 @@ int main(int argc, char* argv[]){
     std::vector<int> pathPoints;
     std::vector<geometry_msgs::Pose> vectors;
     int robotPos = info.width*robot_row+robot_col;
-    bool stuckInCostMap = cost_map[robotPos] == 99;
+    //bool stuckInCostMap = cost_map[robotPos] == 99;
     if(nav_map.size() != 1 && cam_map.size() != 1 &&  robotPos > 0) {
       int finalTarget = -1;
       std::queue<int> frontier;
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]){
         frontier.pop();
         //ROS_INFO_STREAM("camvalhere " << (cam_map[currentPixel] != 1));
         ROS_INFO_STREAM("cm: " << (float)cost_map[currentPixel]);
-        if(cam_map[currentPixel] != 1 || (stuckInCostMap && cost_map[currentPixel] != 99)) {
+        if(cam_map[currentPixel] != 1 /*|| (stuckInCostMap && cost_map[currentPixel] != 99)*/) {
           finalTarget = currentPixel;
         } else {
           m[currentPixel] = 0;
@@ -70,7 +70,7 @@ int main(int argc, char* argv[]){
             int next = XYtoCords(currentPixel_X + run, currentPixel_Y + rise);
             if(came_from[next] == -1) {
               //ROS_INFO_STREAM("cm: " << (float)cost_map[next]);
-              if(cost_map[next] <= 50 && cost_map[next] >= 0 || (stuckInCostMap)) {
+              if(cost_map[next] <= 50 && cost_map[next] >= 0/* || (stuckInCostMap)*/) {
                 frontier.push(next);
               }
               came_from[next] = currentPixel;

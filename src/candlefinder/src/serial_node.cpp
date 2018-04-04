@@ -28,10 +28,14 @@ bool writeSerial(std::string);
 void sendDriveVector(const geometry_msgs::Twist& msg) {
   if(driveAngle != msg.angular.z) {
     driveAngle = msg.angular.z;
+    ROS_INFO_STREAM("sending drive angle:");
+    ROS_INFO_STREAM(driveAngle);
     writeSerial("a" + std::to_string(driveAngle));
   }
   if(driveSpeed != msg.linear.x) {
     driveSpeed = msg.linear.x;
+    ROS_INFO_STREAM("sending drive speed:");
+    ROS_INFO_STREAM(driveSpeed);
     writeSerial("s" + std::to_string(driveSpeed));
   }
 }
@@ -39,6 +43,8 @@ void sendDriveVector(const geometry_msgs::Twist& msg) {
 void sendTargetHeadAngle(const geometry_msgs::Quaternion& msg) {
   if(targetHeadAngle != msg.z) {
     targetHeadAngle = msg.z;
+    ROS_INFO_STREAM("sending head angle:");
+    ROS_INFO_STREAM(targetHeadAngle);
     writeSerial("h" + std::to_string(targetHeadAngle));
   }
 }
@@ -46,6 +52,8 @@ void sendTargetHeadAngle(const geometry_msgs::Quaternion& msg) {
 void sendExtinguish(const std_msgs::Bool& msg){
   if(extinguishFlag != msg.data){
     extinguishFlag = msg.data;
+    ROS_INFO_STREAM("sending extinguish flag:");
+    ROS_INFO_STREAM(extinguishFlag);
     writeSerial("e" + std::to_string(extinguishFlag));
   }
 }
@@ -103,15 +111,21 @@ int main(int argc, char* argv[]){
     if(strLength >= 4) {
       if(msg.at(0) == 'a') {
         int angle = std::stoi(msg.substr(1, strLength), &sz);
+        ROS_INFO_STREAM("base pose angle:");
+        ROS_INFO_STREAM(angle);
         base_pose_msg.angular.z = angle;
         base_pose_pub.publish(base_pose_msg);
       } else if(msg.at(0) == 's') {
         int newSpeed = std::stoi(msg.substr(1, strLength), &sz);
         if(newSpeed > 100) newSpeed = 100;
+        ROS_INFO_STREAM("base pose speed:");
+        ROS_INFO_STREAM(newSpeed);
         base_pose_msg.linear.x = newSpeed;
         base_pose_pub.publish(base_pose_msg);
       } else if(msg.at(0) == 'h') {
         int angle = std::stoi(msg.substr(1, strLength), &sz);
+        ROS_INFO_STREAM("current head angle:");
+        ROS_INFO_STREAM(angle);
         current_head_angle_msg.z = angle;
         current_head_angle_pub.publish(current_head_angle_msg);
       }
@@ -120,6 +134,8 @@ int main(int argc, char* argv[]){
     if(strLength >= 2) {
       if(msg.at(0) == 'g') {
         bool startVal = (bool)(std::stoi(msg.substr(1, strLength), &sz));
+        ROS_INFO_STREAM("alarm detect publish:");
+        ROS_INFO_STREAM(startVal);
         start_bool_msg.data = startVal;
         start_bool_pub.publish(start_bool_msg);
       }
