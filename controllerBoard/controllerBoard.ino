@@ -33,7 +33,7 @@ Encoder headEncoder(HEAD_ENC_PIN_A, HEAD_ENC_PIN_B);
 String inputString = "";
 boolean stringComplete = false;
 
-int targetAngle = 0;
+int targetBaseAngle = 0;
 int targetSpeed = 0;
 
 void setup() {
@@ -58,7 +58,7 @@ void setup() {
   pinMode(FLAME_LED_PIN, OUTPUT);
 
   pinMode(ALARM_DETECT_PIN, INPUT);
-
+  
   Serial.begin(9600);
   inputString.reserve(200);
   
@@ -72,25 +72,43 @@ if (stringComplete) {
     inputString.trim();
     Serial.println(inputString);
     int strLength = inputString.length();
-    if(strLength > 3) {
+    
+    if(strLength >= 4) {
       if(inputString.charAt(0) == 'a') {
         int angle = inputString.substring(1, strLength).toInt();
-        Serial.print("Angle: ");
-        Serial.println(angle);
-        targetAngle = angle;
+        char buffer[4];
+        sprintf(buffer, "a%03d", angle);
+        Serial.println(buffer);
+        targetBaseAngle = angle;
       } else if(inputString.charAt(0) == 's') {
         int newSpeed = inputString.substring(1, strLength).toInt();
-        Serial.print("Speed: ");
-        Serial.println(newSpeed);
+        char buffer[4];
+        sprintf(buffer, "s%03d", newSpeed);
+        Serial.println(buffer);
         if(newSpeed > 100) newSpeed = 100;
         targetSpeed = newSpeed;
+      } else if(inputString.charAt(0) == 'h') {
+        int angle = inputString.substring(1, strLength).toInt();
+        char buffer[4];
+        sprintf(buffer, "h%03d", angle);
+        Serial.println(buffer);
+        //targetHeadAngle = angle;
+      }
+    }
+    
+    if(strLength >= 2) {
+      if(inputString.charAt(0) == 'e') {
+        bool solenoidValue = (bool)(inputString.substring(1, strLength).toInt() != 0);
+        char buffer[2];
+        sprintf(buffer, "e%01d", (int)solenoidValue);
+        Serial.println(buffer);
+        setSolenoid(solenoidValue);
       }
     }
     inputString = "";
     stringComplete = false;
   }
-  setVectorAngle(targetAngle);
-  setDriveMC(targetSpeed*0.01);
+  drive(targetBaseAngle, targetSpeed*0.01);
   count++;
   if(count > 1000) {
     count = 0;
@@ -112,6 +130,28 @@ void homeVectorMotors() {
    vectorEncoder.write(0);  
 }
 
+bool drive(int angle, float velocity) {
+  while(angle <0)
+    angle += 360;
+  angle = angle % 360;
+  //Serial.print("Current Angle: ");
+  //Serial.println(vectorEncoder.read()*360/VECTOR_ENC_PULSES);
+  int targetPulse = angle*VECTOR_ENC_PULSES/360;
+  if(abs(vectorEncoder.read()- targetPulse) < 5) {
+    setVectorMC(0);
+    setDriveMC(velocity);
+    return true;
+  } else{
+    setDriveMC(0);
+    if(vectorEncoder.read() < targetPulse) {
+      setVectorMC(1);
+    } else if(vectorEncoder.read() > targetPulse) {
+      setVectorMC(-1);
+    }
+  }
+  return false;
+}
+
 bool setVectorAngle(int angle) {
   while(angle <0)
     angle += 360;
@@ -122,10 +162,12 @@ bool setVectorAngle(int angle) {
   if(abs(vectorEncoder.read()- targetPulse) < 5) {
     setVectorMC(0);
     return true;
-  } else if(vectorEncoder.read() < targetPulse) {
-    setVectorMC(1);
-  } else if(vectorEncoder.read() > targetPulse) {
-    setVectorMC(-1);
+  } else{
+    if(vectorEncoder.read() < targetPulse) {
+      setVectorMC(1);
+    } else if(vectorEncoder.read() > targetPulse) {
+      setVectorMC(-1);
+    }
   }
   return false;
 }
@@ -160,6 +202,10 @@ void setDriveMC(float d) {
     digitalWrite(DRIVE_MC_PIN_B, HIGH);
     analogWrite(DRIVE_MC_PIN_EN, d * 255);
   }
+}
+
+void setSolenoid(bool solenoidValue) {
+  digitalWrite(SOLENOID_PIN, solenoidValue);
 }
 
 void serialEvent() {
