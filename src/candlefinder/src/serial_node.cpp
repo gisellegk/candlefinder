@@ -6,12 +6,21 @@
 #include "serial/serial.h"
 #include <string>
 
+std::string::size_type sz;   // alias of size_t
+
+//stuff to publish
+geometry_msgs::Twist base_pose_msg;
+geometry_msgs::Quaternion current_head_angle_msg;
+std_msgs::Bool start_bool_msg;
+
+//stuff to write:
 int driveAngle = 0; // degrees, 0 to 360
-int driveSpeed = 0; // -1 to 1
+int driveSpeed = 0; // 0 to 100
 
 int targetHeadAngle = 0; // degrees
 
 bool extinguishFlag = false;
+
 serial::Serial * my_serial;
 
 bool writeSerial(std::string);
@@ -67,7 +76,6 @@ int main(int argc, char* argv[]){
   ros::Publisher start_bool_pub = nh.advertise<std_msgs::Bool>("start_bool", 1000);
   ros::Publisher base_pose_pub = nh.advertise<geometry_msgs::Twist>("base_pose", 1000);
   ros::Publisher current_head_angle_pub = nh.advertise<geometry_msgs::Quaternion>("current_head_angle", 1000);
-  ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("chatter", 1000);
 
   ros::Subscriber drive_vector_sub = nh.subscribe("drive_vector", 1000, &sendDriveVector);
   ros::Subscriber target_head_angle_sub = nh.subscribe("target_head_angle", 1000, &sendTargetHeadAngle);
@@ -79,10 +87,43 @@ int main(int argc, char* argv[]){
   unsigned long baud = 9600;
   my_serial = new serial::Serial(port, baud, serial::Timeout::simpleTimeout(1000));
 
+  base_pose_msg.angular.z = 0;
+  base_pose_msg.linear.x = 0;
+  current_head_angle_msg.z = 0;
+  start_bool_msg.data = false;
+
   while(ros::ok()) {
     //ROS_INFO_STREAM("Serial port recived " << readSerial());
     std::string msg = readSerial();
 
+    //msg.trim();
+    ROS_INFO_STREAM(msg);
+    int strLength = msg.length();
+
+    if(strLength >= 4) {
+      if(msg.at(0) == 'a') {
+        int angle = std::stoi(msg.substr(1, strLength), &sz);
+        base_pose_msg.angular.z = angle;
+        base_pose_pub.publish(base_pose_msg);
+      } else if(msg.at(0) == 's') {
+        int newSpeed = std::stoi(msg.substr(1, strLength), &sz);
+        if(newSpeed > 100) newSpeed = 100;
+        base_pose_msg.linear.x = newSpeed;
+        base_pose_pub.publish(base_pose_msg);
+      } else if(msg.at(0) == 'h') {
+        int angle = std::stoi(msg.substr(1, strLength), &sz);
+        current_head_angle_msg.z = angle;
+        current_head_angle_pub.publish(current_head_angle_msg);
+      }
+    }
+
+    if(strLength >= 2) {
+      if(msg.at(0) == 'g') {
+        bool startVal = (bool)(std::stoi(msg.substr(1, strLength), &sz));
+        start_bool_msg.data = startVal;
+        start_bool_pub.publish(start_bool_msg);
+      }
+    }
 
     ros::spinOnce();
     rate.sleep();

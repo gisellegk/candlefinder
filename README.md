@@ -30,13 +30,6 @@ Message Type: geometry_msgs::Twist
 __msg.angular.z__: The current angle of the robot's drive base, in degrees. This is an absolute position relative to the base's start position.
 __msg.linear.x__: The current speed for the robot, from 0 to 100.
 
-### chatter
-Published by: serial_node
-Subscribed to by:
-Message Type: std_msgs::String
-
-__msg.data__: String of information to be printed. Good for debugging arduino code!
-
 ### target_head_angle
 Published by: navigation_node (navigation.cpp)
 Subscribed to by: serial_node
@@ -131,7 +124,7 @@ read and write to serial port:
   /dev/ttyUSB1 (or adjust as needed)
   9600 baud
 
-##Read and publish:
+## Read and publish:
   start_bool:
     - g* for go
   base_pose
@@ -139,10 +132,8 @@ read and write to serial port:
     - s* for speed
   current_head_angle
     - h* for head angle
-  chatter
-    - c* for chatter
 
-##Process and Write to serial:
+## Process and Write to serial:
   drive_vector
     - a* for angle
     - s* for speed
