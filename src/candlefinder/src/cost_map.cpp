@@ -9,7 +9,7 @@ void changePixel(int, int);
 std::vector<int8_t> hector_map;
 std::vector<int8_t> cost_map(1,-1);
 
-int cost_radius = 18;
+int cost_radius = 22;
 
 nav_msgs::MapMetaData info;
 

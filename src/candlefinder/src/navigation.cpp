@@ -44,18 +44,19 @@ int main(int argc, char* argv[]){
     std::vector<int> pathPoints;
     std::vector<geometry_msgs::Pose> vectors;
     int robotPos = info.width*robot_row+robot_col;
+    bool stuckInCostMap = cost_map[robotPos] == 99;
     if(nav_map.size() != 1 && cam_map.size() != 1 &&  robotPos > 0) {
       int finalTarget = -1;
       std::queue<int> frontier;
       frontier.push(robotPos);
       std::vector<int> came_from(info.width*info.height, -1);
       came_from[robotPos] = robotPos;
-
       while(frontier.size() > 0 && finalTarget == -1) {
         int currentPixel =  frontier.front();
         frontier.pop();
         //ROS_INFO_STREAM("camvalhere " << (cam_map[currentPixel] != 1));
-        if(cam_map[currentPixel] != 1) {
+        ROS_INFO_STREAM("cm: " << (float)cost_map[currentPixel]);
+        if(cam_map[currentPixel] != 1 || (stuckInCostMap && cost_map[currentPixel] != 99)) {
           finalTarget = currentPixel;
         } else {
           m[currentPixel] = 0;
@@ -69,7 +70,7 @@ int main(int argc, char* argv[]){
             int next = XYtoCords(currentPixel_X + run, currentPixel_Y + rise);
             if(came_from[next] == -1) {
               //ROS_INFO_STREAM("cm: " << (float)cost_map[next]);
-              if(cost_map[next] <= 50 && cost_map[next] >= 0) {
+              if(cost_map[next] <= 50 && cost_map[next] >= 0 || (stuckInCostMap)) {
                 frontier.push(next);
               }
               came_from[next] = currentPixel;
@@ -90,7 +91,7 @@ int main(int argc, char* argv[]){
     }
 
     int numberOfPathPoints = pathPoints.size();
-    if(numberOfPathPoints > 0) {
+    if(numberOfPathPoints > 1) {
       std::vector<uint16_t> newPathPoints;
       int s = 0;
 
@@ -146,11 +147,12 @@ int main(int argc, char* argv[]){
             newVector.orientation = toQuaternion(0, 0, angle);
             if(vectors.size() == 0){
               std_msgs::Int16 msg;
-              int targetAngle = (((int)((angle*57.295779-90)+360)%360) - robotAngle + 360) % 360;
+              int globalTargetAngle = ((int)(-(angle*57.295779-90)+360)%360);
+              int targetAngle = (globalTargetAngle - robotAngle + 360) % 360;
               msg.data = targetAngle;
               target_vector_pub.publish(msg);
-              //ROS_INFO_STREAM("angle " << targetAngle);
-              //ROS_INFO_STREAM("robot angle: " << robotAngle << "deg target angle: " << (int)((angle*57.295779-90)+360)%360 << "deg");
+              //ROS_INFO_STREAM("robot angle: " << robotAngle << "deg, global target angle: " << globalTargetAngle << "deg");
+              ROS_INFO_STREAM("target angle " << targetAngle);
             }
             vectors.push_back(newVector);
             for(int dd = 0; dd < distance; dd++){
@@ -163,6 +165,38 @@ int main(int argc, char* argv[]){
           }
         }
       }
+    } else if (numberOfPathPoints == 1) {
+      float start_X = robotPos/info.width;
+      float start_Y = robotPos%info.width;
+      //ROS_INFO_STREAM("PS x: " << start_X << " y: " << start_Y << " p: " << XYtoCords(start_X, start_Y));
+      float end_X = pathPoints[0]/info.width;
+      float end_Y = pathPoints[0]%info.width;
+
+      float diff_X = end_X - start_X;
+      float diff_Y = end_Y - start_Y;
+
+      float angle = atan(diff_Y/diff_X);
+
+      if(diff_X > 0 && diff_Y > 0) {
+        //first quadrant
+      } else if(diff_X < 0 && diff_Y > 0) {
+        //second quadrant
+        angle+=M_PI;
+      } else if(diff_X < 0 && diff_Y <= 0) {
+        //third quadrant
+        angle+=M_PI;
+      } else if(diff_X > 0 && diff_Y <= 0) {
+        //fourth quadrant
+        angle+=2*M_PI;
+      }
+
+      std_msgs::Int16 msg;
+      int globalTargetAngle = ((int)(-(angle*57.295779-90)+360)%360);
+      int targetAngle = (globalTargetAngle - robotAngle + 360) % 360;
+      msg.data = targetAngle;
+      target_vector_pub.publish(msg);
+      ROS_INFO_STREAM("SINGLE POINT: target angle " << targetAngle);
+
     }
 
     nav_msgs::OccupancyGrid c;
@@ -197,7 +231,7 @@ void saveCamMap(const nav_msgs::OccupancyGrid& msg){
 
 void savePose(const geometry_msgs::PoseStamped& msg){
   pose = msg.pose;
-  robotAngle = (int)(360 - round(atan2(2*(pose.orientation.w*pose.orientation.z + pose.orientation.x*pose.orientation.y), 1-2*(pose.orientation.z*pose.orientation.z))*57.3))%360;
+  robotAngle = (int)(360 + round(atan2(2*(pose.orientation.w*pose.orientation.z + pose.orientation.x*pose.orientation.y), 1-2*(pose.orientation.z*pose.orientation.z))*57.3))%360;
   robot_row = (int)((pose.position.y / info.resolution) + (info.height/2.0));
   robot_col = (int)((pose.position.x / info.resolution) + (info.width/2.0));
 }

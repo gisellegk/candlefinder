@@ -8,7 +8,7 @@ project(candlefinder)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED roscpp geometry_msgs nav_msgs)
-
+find_package(serial)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -101,7 +101,7 @@ catkin_package(
 # include_directories(include)
 
 include($ENV{ROS_ROOT}/core/rosbuild/FindPkgConfig.cmake)
-pkg_check_modules(OPENCV REQUIRED opencv)
+pkg_check_modules(OPENCV REQUIRED opencv serial)
 include_directories(${OPENCV_INCLUDE_DIRS})
 link_directories(${OPENCV_LIBRARY_DIRS})
 
@@ -126,6 +126,7 @@ add_executable(cost_map src/cost_map.cpp)
 add_executable(navigation src/navigation.cpp)
 add_executable(spinduino_test src/spinduino_test.cpp)
 add_executable(control src/control.cpp)
+add_executable(serial_node src/serial_node.cpp)
 
 
 ## Rename C++ executable without prefix
@@ -146,6 +147,7 @@ target_link_libraries(cost_map ${catkin_LIBRARIES})
 target_link_libraries(navigation ${catkin_LIBRARIES})
 target_link_libraries(spinduino_test ${catkin_LIBRARIES})
 target_link_libraries(control ${catkin_LIBRARIES})
+target_link_libraries(serial_node ${catkin_LIBRARIES} ${serial_LIBRARIES})
 
 #############
 ## Install ##

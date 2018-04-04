@@ -5,7 +5,7 @@
 #include "camera_scan_map.h"
 
 #define MAX_RANGE 100 // max camera range in pixels
-#define HFOV 38 // 50 degree horizontal field of view
+#define HFOV 350 // 38 degree horizontal field of view
 
 std::vector<int8_t> hector_map;
 std::vector<int8_t> cam_scan(1,-1);
