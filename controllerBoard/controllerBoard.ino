@@ -25,7 +25,10 @@
 
 #define ALARM_DETECT_PIN  25 //PA3
 
-const float VECTOR_ENC_PULSES = 1440;
+#define VECTOR_ENC_PULSES 1440
+#define HEAD_ENC_PULSES 30*3.7 // 24 ticks per encoder rev * 3.7 gear ratio
+
+#define VECTORING_THRESHOLD 5
 
 Encoder vectorEncoder(VECTOR_ENC_PIN_A, VECTOR_ENC_PIN_B);
 Encoder headEncoder(HEAD_ENC_PIN_A, HEAD_ENC_PIN_B);
@@ -33,6 +36,7 @@ Encoder headEncoder(HEAD_ENC_PIN_A, HEAD_ENC_PIN_B);
 String inputString = "";
 boolean stringComplete = false;
 
+int targetHeadAngle = 0;
 int targetBaseAngle = 0;
 int targetSpeed = 0;
 
@@ -47,7 +51,7 @@ void setup() {
   pinMode(HEAD_MC_PIN_A, OUTPUT);
   pinMode(HEAD_MC_PIN_B, OUTPUT);
   pinMode(HEAD_MC_PIN_EN, OUTPUT);
-  pinMode(HEAD_HOME_PIN, INPUT);
+  pinMode(HEAD_HOME_PIN, INPUT_PULLUP);
 
   pinMode(DRIVE_MC_PIN_A, OUTPUT);
   pinMode(DRIVE_MC_PIN_B, OUTPUT);
@@ -63,6 +67,7 @@ void setup() {
   inputString.reserve(200);
   
   homeVectorMotors();
+  homeHead();
 }
 
 int count = 0;
@@ -73,7 +78,7 @@ if (stringComplete) {
     Serial.println(inputString);
     int strLength = inputString.length();
     
-    if(strLength >= 4) {
+    if(strLength >= 2) {
       if(inputString.charAt(0) == 'a') {
         int angle = inputString.substring(1, strLength).toInt();
         char buffer[4];
@@ -92,11 +97,8 @@ if (stringComplete) {
         char buffer[4];
         sprintf(buffer, "h%03d", angle);
         Serial.println(buffer);
-        //targetHeadAngle = angle;
+        targetHeadAngle = angle;
       }
-    }
-    
-    if(strLength >= 2) {
       if(inputString.charAt(0) == 'e') {
         bool solenoidValue = (bool)(inputString.substring(1, strLength).toInt() != 0);
         char buffer[2];
@@ -120,56 +122,126 @@ if (stringComplete) {
 void homeVectorMotors() {
     setDriveMC(.05);
     delay(1);
-    setVectorMC(1);
+    setVectorMC(-1);
     while(!digitalRead(VECTOR_HOME_PIN)) delay(1);
     setDriveMC(0);
     setVectorMC(0);
     delay(500);
     vectorEncoder.write(0);
-    while(!setVectorAngle(30)) delay(1);
-   vectorEncoder.write(0);  
+    while(!setVectorAngle(20)) delay(1);
+    vectorEncoder.write(0);  
 }
 
-bool drive(int angle, float velocity) {
+void homeHead() {
+    setHeadMC(1);
+    while(digitalRead(HEAD_HOME_PIN)) delay(1);
+    setHeadMC(0);
+    delay(500);
+    headEncoder.write(0);
+    //while(!setHeadAngle(90)) delay(1);
+    //headEncoder.write(0);  
+}
+
+void drive(int angle, float velocity) {
+  setDriveMC(velocity*setVectorAngle(angle));
+}
+
+
+
+int VECTOR_PULSES_PER_QUADRANT = VECTOR_ENC_PULSES / 4;
+int HEAD_PULSES_PER_QUADRANT = HEAD_ENC_PULSES / 4;
+
+int vectorSpeedSign = 1;
+int headSpeedSign = 1;
+
+int setVectorAngle(int targetAngle) {
+  while(targetAngle <0)
+    targetAngle += 360;
+  targetAngle = targetAngle % 360;  
+  
+  int currentAngle = vectorEncoder.read() * 360 / VECTOR_ENC_PULSES;
+  while(currentAngle <0)
+    currentAngle += 360;
+  currentAngle = currentAngle % 360;  
+
+  int currentQuadrant = (currentAngle/90) + 1;
+  int targetQuadrant = (targetAngle/90) + 1;
+
+  /*Serial.println("\n");
+  Serial.print("target angle: "); 
+  Serial.println(targetAngle);
+  Serial.print("target quadrant: ");
+  Serial.println(targetQuadrant);
+  Serial.print("current angle: ");
+  Serial.println(currentAngle);
+  Serial.print("current quadrant: ");
+  Serial.println(currentQuadrant);
+  Serial.println("\n");
+  */
+
+  if((currentQuadrant + 1)%4 == targetQuadrant) {
+    setVectorMC(1); //CCW, same dir
+    //Serial.println("CCW\n\n");
+  } else if ((currentQuadrant + 3)%4 == targetQuadrant) {
+    setVectorMC(-1); //CW, same dir
+    //Serial.println("CW\n\n");
+  } else {
+    if(currentQuadrant != targetQuadrant){
+      //vectorSpeedSign *= -1; //toggle dir
+      targetAngle = (targetAngle + 180) % 360;
+      
+    }
+    if (abs(currentAngle - targetAngle) < VECTORING_THRESHOLD){// we are close enough to the target
+      setVectorMC(0);
+      if(currentQuadrant != targetQuadrant) return 0;
+      else return 1;
+    }
+    else if(currentAngle > targetAngle)  {
+      setVectorMC(-1); //CW
+      //Serial.println("CW\n\n");
+    }
+    else if(currentAngle < targetAngle)  {
+      setVectorMC(1); //cCW
+      //Serial.println("CCW\n\n");
+    }
+  }
+  return 0;
+}
+
+bool setHeadAngle(int angle) {
   while(angle <0)
     angle += 360;
   angle = angle % 360;
-  //Serial.print("Current Angle: ");
-  //Serial.println(vectorEncoder.read()*360/VECTOR_ENC_PULSES);
-  int targetPulse = angle*VECTOR_ENC_PULSES/360;
-  if(abs(vectorEncoder.read()- targetPulse) < 5) {
-    setVectorMC(0);
-    setDriveMC(velocity);
+  Serial.print("Current Head Angle: ");
+  Serial.println(headEncoder.read()*360/HEAD_ENC_PULSES);
+  int targetPulse = angle*HEAD_ENC_PULSES/360;
+  if(abs(headEncoder.read() - targetPulse) < 5) {
+    setHeadMC(0);
     return true;
   } else{
-    setDriveMC(0);
-    if(vectorEncoder.read() < targetPulse) {
-      setVectorMC(1);
-    } else if(vectorEncoder.read() > targetPulse) {
-      setVectorMC(-1);
+    if(headEncoder.read() < targetPulse) {
+      setHeadMC(1);
+    } else if(headEncoder.read() > targetPulse) {
+      setHeadMC(-1);
     }
   }
   return false;
 }
 
-bool setVectorAngle(int angle) {
-  while(angle <0)
-    angle += 360;
-  angle = angle % 360;
-  //Serial.print("Current Angle: ");
-  //Serial.println(vectorEncoder.read()*360/VECTOR_ENC_PULSES);
-  int targetPulse = angle*VECTOR_ENC_PULSES/360;
-  if(abs(vectorEncoder.read()- targetPulse) < 5) {
-    setVectorMC(0);
-    return true;
-  } else{
-    if(vectorEncoder.read() < targetPulse) {
-      setVectorMC(1);
-    } else if(vectorEncoder.read() > targetPulse) {
-      setVectorMC(-1);
-    }
+void setHeadMC(int d) {
+  if(d == 0) {
+    digitalWrite(HEAD_MC_PIN_A, LOW);
+    digitalWrite(HEAD_MC_PIN_B, LOW);
+    digitalWrite(HEAD_MC_PIN_EN, LOW);
+  } else if(d < 0) {
+    digitalWrite(HEAD_MC_PIN_A, HIGH);
+    digitalWrite(HEAD_MC_PIN_B, LOW);
+    digitalWrite(HEAD_MC_PIN_EN, HIGH);
+  } else if(d > 0) {
+    digitalWrite(HEAD_MC_PIN_A, LOW);
+    digitalWrite(HEAD_MC_PIN_B, HIGH);
+    digitalWrite(HEAD_MC_PIN_EN, HIGH);
   }
-  return false;
 }
 
 void setVectorMC(int d) {
