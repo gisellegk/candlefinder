@@ -244,6 +244,11 @@ def main():
             flameP.x = maxLoc[0]
             flameP.y = maxLoc[1]
             pub.publish(flameP)
+          else:
+            flameP = Point()
+            flameP.x = -1
+            flameP.y = -1
+            pub.publish(flameP)
 
           imgScaled = cv2.resize(img[:,:], (640, 480))
           cv2.imshow('Lepton 2.5 Radiometry', imgScaled)
