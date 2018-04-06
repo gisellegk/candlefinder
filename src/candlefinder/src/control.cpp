@@ -75,7 +75,7 @@ int main(int argc, char* argv[]){
 
   ros::Rate rate(10); //idk
   ROS_INFO_STREAM("let's do this!!!");
-  state = CAMSPIN;
+  state = EXPLORE;
   ROS_INFO_STREAM("state: " << state);
 
   while(ros::ok()) {
@@ -91,10 +91,11 @@ int main(int argc, char* argv[]){
         Spin 360 to camscan surrounding area to make sure the fire isn't in starting room.
       */
       case CAMSPIN:
-        q.z = 359;
+        q.z = 180;
         headAnglePub.publish(q);
-        //if(head_angle >=350)
-        state = EXPLORE; //probs good enough i guess.
+
+        if(head_angle >=350)
+          state = EXPLORE; //probs good enough i guess.
         break;
       /*
       state EXPLORE:
@@ -105,10 +106,10 @@ int main(int argc, char* argv[]){
         headAnglePub.publish(q);
         t.angular.z = navAngle;
         t.linear.x = 50;
-        if(flame_x > 0) {
+        /*if(flame_x > 0) {
           t.linear.x = 0;
           state = FLAME;
-        }
+        }*/
         driveVectorPub.publish(t);
         break;
       /*

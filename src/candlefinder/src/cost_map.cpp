@@ -9,7 +9,7 @@ void changePixel(int, int);
 std::vector<int8_t> hector_map;
 std::vector<int8_t> cost_map(1,-1);
 
-int cost_radius = 22;
+int cost_radius = 20;
 
 nav_msgs::MapMetaData info;
 
@@ -21,7 +21,7 @@ int main(int argc, char* argv[]){
   ros::Publisher pub = nh.advertise<nav_msgs::OccupancyGrid>("cost_map", 1000);
   ros::Subscriber mapSub = nh.subscribe("map", 1000, &saveMap);
 
-  ros::Rate rate(10); //idk
+  ros::Rate rate(30); //idk
   ROS_INFO_STREAM("map.inflate();");
 
   info.width = 1;
@@ -34,7 +34,7 @@ int main(int argc, char* argv[]){
     for(int i = 0; i < cost_map.size(); i++){
       //are you ready!!!!
       //for each pixel in the map
-      if(cost_map[i] == 100){
+      if(hector_map[i] > 50){
         int i_x = floor(i / info.width);
         int i_y = i % info.width;
 

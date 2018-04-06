@@ -44,8 +44,9 @@ int main(int argc, char* argv[]){
     std::vector<int> pathPoints;
     std::vector<geometry_msgs::Pose> vectors;
     int robotPos = info.width*robot_row+robot_col;
-    //bool stuckInCostMap = cost_map[robotPos] == 99;
     if(nav_map.size() != 1 && cam_map.size() != 1 &&  robotPos > 0) {
+      bool stuckInCostMap = (cost_map[robotPos] == 99);
+      //ROS_INFO_STREAM("Stuck in costmap: " << stuckInCostMap);
       int finalTarget = -1;
       std::queue<int> frontier;
       frontier.push(robotPos);
@@ -55,8 +56,8 @@ int main(int argc, char* argv[]){
         int currentPixel =  frontier.front();
         frontier.pop();
         //ROS_INFO_STREAM("camvalhere " << (cam_map[currentPixel] != 1));
-        ROS_INFO_STREAM("cm: " << (float)cost_map[currentPixel]);
-        if(cam_map[currentPixel] != 1 /*|| (stuckInCostMap && cost_map[currentPixel] != 99)*/) {
+        //ROS_INFO_STREAM("cm: " << (float)cost_map[currentPixel]);
+        if((cam_map[currentPixel] != 1 && !stuckInCostMap) || (stuckInCostMap && cost_map[currentPixel] == 0)) {
           finalTarget = currentPixel;
         } else {
           m[currentPixel] = 0;
@@ -70,7 +71,7 @@ int main(int argc, char* argv[]){
             int next = XYtoCords(currentPixel_X + run, currentPixel_Y + rise);
             if(came_from[next] == -1) {
               //ROS_INFO_STREAM("cm: " << (float)cost_map[next]);
-              if(cost_map[next] <= 50 && cost_map[next] >= 0/* || (stuckInCostMap)*/) {
+              if(cost_map[next] <= 50 && cost_map[next] >= 0 || (stuckInCostMap)) {
                 frontier.push(next);
               }
               came_from[next] = currentPixel;
@@ -80,7 +81,7 @@ int main(int argc, char* argv[]){
       }
       if(finalTarget!=-1 ) {
         int linePos = finalTarget;
-        do{
+        do {
           pathPoints.insert(pathPoints.begin(),linePos);
           m[linePos] = 50;
           linePos = came_from[linePos];
@@ -88,117 +89,116 @@ int main(int argc, char* argv[]){
           int y = linePos%info.width;
         } while(linePos != robotPos);
       }
-    }
 
-    int numberOfPathPoints = pathPoints.size();
-    if(numberOfPathPoints > 1) {
-      std::vector<uint16_t> newPathPoints;
-      int s = 0;
+      int numberOfPathPoints = pathPoints.size();
+      if(numberOfPathPoints > 1) {
+        std::vector<uint16_t> newPathPoints;
+        int s = 0;
 
-      while(s < numberOfPathPoints - 1) {
-        //ROS_INFO_STREAM("s: " << s);
-        for(int e = numberOfPathPoints - 1; e > s; e--) {
-          bool lineofsight = false;
-          float start_X = pathPoints[s]/info.width;
-          float start_Y = pathPoints[s]%info.width;
-          //ROS_INFO_STREAM("PS x: " << start_X << " y: " << start_Y << " p: " << XYtoCords(start_X, start_Y));
-          float end_X = pathPoints[e]/info.width;
-          float end_Y = pathPoints[e]%info.width;
+        while(s < numberOfPathPoints - 1) {
+          //ROS_INFO_STREAM("s: " << s);
+          for(int e = numberOfPathPoints - 1; e > s; e--) {
+            bool lineofsight = false;
+            float start_X = pathPoints[s]/info.width;
+            float start_Y = pathPoints[s]%info.width;
+            //ROS_INFO_STREAM("PS x: " << start_X << " y: " << start_Y << " p: " << XYtoCords(start_X, start_Y));
+            float end_X = pathPoints[e]/info.width;
+            float end_Y = pathPoints[e]%info.width;
 
-          float diff_X = end_X - start_X;
-          float diff_Y = end_Y - start_Y;
+            float diff_X = end_X - start_X;
+            float diff_Y = end_Y - start_Y;
 
-          float angle = atan(diff_Y/diff_X);
+            float angle = atan(diff_Y/diff_X);
 
-          if(diff_X > 0 && diff_Y > 0) {
-            //first quadrant
-          } else if(diff_X < 0 && diff_Y > 0) {
-            //second quadrant
-            angle+=M_PI;
-          } else if(diff_X < 0 && diff_Y <= 0) {
-            //third quadrant
-            angle+=M_PI;
-          } else if(diff_X > 0 && diff_Y <= 0) {
-            //fourth quadrant
-            angle+=2*M_PI;
-          }
-
-          int distance = ceil(sqrt(pow(diff_Y,2)+pow(diff_X,2)));
-          for(int dd = 0; dd < distance+1; dd++) {
-            int x = round(start_X + dd * cos(angle));
-            int y = round(start_Y + dd * sin(angle));
-            //ROS_INFO_STREAM("x: " << x << " y: " << y << " d: " << distance << " p: " << XYtoCords(x,y));
-            //ROS_INFO_STREAM("cm: " << (float)cost_map[XYtoCords(x,y)]);
-            if(x < 0 ||  x > info.width-1 || y < 0 || y> info.height-1) continue;
-            if(cost_map[x*info.width + y] == 99) {
-              break;
-            } else {
-              if(x == end_X && y == end_Y)
-                lineofsight = true;
+            if(diff_X > 0 && diff_Y > 0) {
+              //first quadrant
+            } else if(diff_X < 0 && diff_Y > 0) {
+              //second quadrant
+              angle+=M_PI;
+            } else if(diff_X < 0 && diff_Y <= 0) {
+              //third quadrant
+              angle+=M_PI;
+            } else if(diff_X > 0 && diff_Y <= 0) {
+              //fourth quadrant
+              angle+=2*M_PI;
             }
-          }
-          if(lineofsight) {
-            geometry_msgs::Pose newVector;
-            //ROS_INFO_STREAM("posX: " << (float)start_X << " posY: " << (float)start_Y);
-            //ROS_INFO_STREAM("tarX: " << (float)(robotPos/info.width) << " tarY: " <<  (float)(robotPos%info.width));
-            //newVector.position.x = (start_X - (info.width/2.0)) * info.resolution;
-            //newVector.position.y = (start_Y - (info.height/2.0)) * info.resolution;
-            newVector.position = pose.position;
-            newVector.orientation = toQuaternion(0, 0, angle);
-            if(vectors.size() == 0){
-              std_msgs::Int16 msg;
-              int globalTargetAngle = ((int)(-(angle*57.295779-90)+360)%360);
-              int targetAngle = (globalTargetAngle - robotAngle + 360) % 360;
-              msg.data = targetAngle;
-              exploration_target_angle_pub.publish(msg);
-              //ROS_INFO_STREAM("robot angle: " << robotAngle << "deg, global target angle: " << globalTargetAngle << "deg");
-              ROS_INFO_STREAM("target angle " << targetAngle);
+
+            int distance = ceil(sqrt(pow(diff_Y,2)+pow(diff_X,2)));
+            for(int dd = 0; dd < distance+1; dd++) {
+              int x = round(start_X + dd * cos(angle));
+              int y = round(start_Y + dd * sin(angle));
+              //ROS_INFO_STREAM("x: " << x << " y: " << y << " d: " << distance << " p: " << XYtoCords(x,y));
+              //ROS_INFO_STREAM("cm: " << (float)cost_map[XYtoCords(x,y)]);
+              if(x < 0 ||  x > info.width-1 || y < 0 || y> info.height-1) continue;
+              if(cost_map[x*info.width + y] != 99 || stuckInCostMap) {
+                if(x == end_X && y == end_Y)
+                  lineofsight = true;
+              } else {
+                break;
+              }
             }
-            vectors.push_back(newVector);
-            for(int dd = 0; dd < distance; dd++){
-             int x = round(start_X + dd * cos(angle));
-             int y = round(start_Y + dd * sin(angle));
-             m[x*info.width+y] = 100;
-             newPathPoints.push_back(x*info.width+y);
-           }
-           s = e;
+            if(lineofsight) {
+              geometry_msgs::Pose newVector;
+              //ROS_INFO_STREAM("posX: " << (float)start_X << " posY: " << (float)start_Y);
+              //ROS_INFO_STREAM("tarX: " << (float)(robotPos/info.width) << " tarY: " <<  (float)(robotPos%info.width));
+              //newVector.position.x = (start_X - (info.width/2.0)) * info.resolution;
+              //newVector.position.y = (start_Y - (info.height/2.0)) * info.resolution;
+              newVector.position = pose.position;
+              newVector.orientation = toQuaternion(0, 0, angle);
+              if(vectors.size() == 0){
+                std_msgs::Int16 msg;
+                int globalTargetAngle = ((int)(-(angle*57.295779-90)+360)%360);
+                int targetAngle = (globalTargetAngle - robotAngle + 360) % 360;
+                msg.data = targetAngle;
+                exploration_target_angle_pub.publish(msg);
+                //ROS_INFO_STREAM("robot angle: " << robotAngle << "deg, global target angle: " << globalTargetAngle << "deg");
+                ROS_INFO_STREAM("target angle " << targetAngle);
+              }
+              vectors.push_back(newVector);
+              for(int dd = 0; dd < distance; dd++){
+               int x = round(start_X + dd * cos(angle));
+               int y = round(start_Y + dd * sin(angle));
+               m[x*info.width+y] = 100;
+               newPathPoints.push_back(x*info.width+y);
+             }
+             s = e;
+            }
           }
         }
+      } else if (numberOfPathPoints == 1) {
+        float start_X = robotPos/info.width;
+        float start_Y = robotPos%info.width;
+        //ROS_INFO_STREAM("PS x: " << start_X << " y: " << start_Y << " p: " << XYtoCords(start_X, start_Y));
+        float end_X = pathPoints[0]/info.width;
+        float end_Y = pathPoints[0]%info.width;
+
+        float diff_X = end_X - start_X;
+        float diff_Y = end_Y - start_Y;
+
+        float angle = atan(diff_Y/diff_X);
+
+        if(diff_X > 0 && diff_Y > 0) {
+          //first quadrant
+        } else if(diff_X < 0 && diff_Y > 0) {
+          //second quadrant
+          angle+=M_PI;
+        } else if(diff_X < 0 && diff_Y <= 0) {
+          //third quadrant
+          angle+=M_PI;
+        } else if(diff_X > 0 && diff_Y <= 0) {
+          //fourth quadrant
+          angle+=2*M_PI;
+        }
+
+        std_msgs::Int16 msg;
+        int globalTargetAngle = ((int)(-(angle*57.295779-90)+360)%360);
+        int targetAngle = (globalTargetAngle - robotAngle + 360) % 360;
+        msg.data = targetAngle;
+        exploration_target_angle_pub.publish(msg);
+        ROS_INFO_STREAM("SINGLE POINT: target angle " << targetAngle);
+
       }
-    } else if (numberOfPathPoints == 1) {
-      float start_X = robotPos/info.width;
-      float start_Y = robotPos%info.width;
-      //ROS_INFO_STREAM("PS x: " << start_X << " y: " << start_Y << " p: " << XYtoCords(start_X, start_Y));
-      float end_X = pathPoints[0]/info.width;
-      float end_Y = pathPoints[0]%info.width;
-
-      float diff_X = end_X - start_X;
-      float diff_Y = end_Y - start_Y;
-
-      float angle = atan(diff_Y/diff_X);
-
-      if(diff_X > 0 && diff_Y > 0) {
-        //first quadrant
-      } else if(diff_X < 0 && diff_Y > 0) {
-        //second quadrant
-        angle+=M_PI;
-      } else if(diff_X < 0 && diff_Y <= 0) {
-        //third quadrant
-        angle+=M_PI;
-      } else if(diff_X > 0 && diff_Y <= 0) {
-        //fourth quadrant
-        angle+=2*M_PI;
-      }
-
-      std_msgs::Int16 msg;
-      int globalTargetAngle = ((int)(-(angle*57.295779-90)+360)%360);
-      int targetAngle = (globalTargetAngle - robotAngle + 360) % 360;
-      msg.data = targetAngle;
-      exploration_target_angle_pub.publish(msg);
-      ROS_INFO_STREAM("SINGLE POINT: target angle " << targetAngle);
-
     }
-
     nav_msgs::OccupancyGrid c;
     c.data = m;
     c.info = info;
