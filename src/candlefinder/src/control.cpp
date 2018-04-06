@@ -71,9 +71,9 @@ int main(int argc, char* argv[]){
   ros::Subscriber navAngleSub = nh.subscribe("exploration_target_angle", 1000, &saveNavAngle);
 
   ros::Subscriber fftSub = nh.subscribe("start_bool", 1000, &saveStartBool);
-  ros::Subscriber flameSub = nh.subscribe("flame_coord", 1000, &saveFlameCoord);
+  ros::Subscriber flameSub = nh.subscribe("candle_loc", 1000, &saveFlameCoord);
 
-  ros::Rate rate(10); //idk
+  ros::Rate rate(20); //idk
   ROS_INFO_STREAM("let's do this!!!");
   state = EXPLORE;
   ROS_INFO_STREAM("state: " << state);
@@ -106,10 +106,10 @@ int main(int argc, char* argv[]){
         headAnglePub.publish(q);
         t.angular.z = navAngle;
         t.linear.x = 50;
-        /*if(flame_x > 0) {
+        if(flame_x > 0) {
           t.linear.x = 0;
           state = FLAME;
-        }*/
+        }
         driveVectorPub.publish(t);
         break;
       /*
