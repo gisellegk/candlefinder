@@ -14,6 +14,8 @@ int base_angle = 0;
 int slam_angle = 0;
 int navAngle;
 
+double startTime;
+
 enum STATE {
   CAMSPIN,
   EXPLORE,
@@ -26,6 +28,7 @@ STATE state;
 void saveStartBool(const std_msgs::Bool& msg) {
   if(!start && msg.data) {
     ROS_INFO_STREAM("ALARM DETECTED!!! WEEEEOOOOOOOWEEEEOOOO");
+    startTime = ros::Time::now().toSec();
     start = true;
     //it's 2am pls send help
   }
@@ -75,7 +78,7 @@ int main(int argc, char* argv[]){
 
   ros::Rate rate(20); //idk
   ROS_INFO_STREAM("let's do this!!!");
-  state = EXPLORE;
+  state = CAMSPIN;
   ROS_INFO_STREAM("state: " << state);
 
   while(ros::ok()) {
@@ -84,6 +87,7 @@ int main(int argc, char* argv[]){
       geometry_msgs::Quaternion q;
       int angleDiff;
       int offset;
+      double currentTime = ros::Time::now().toSec();
       switch(state){
       //Search & extinguish sequence goes here
       /*
@@ -91,10 +95,29 @@ int main(int argc, char* argv[]){
         Spin 360 to camscan surrounding area to make sure the fire isn't in starting room.
       */
       case CAMSPIN:
-        q.z = 180;
-        headAnglePub.publish(q);
+      if(currentTime - startTime < 0.5) {
+        t.angular.z = 0;
+        t.linear.x = 30;
+        driveVectorPub.publish(t);
+      } else {
+        if(head_angle < 90 || head_angle > 350) {
+          q.z = 120;
+          headAnglePub.publish(q);
 
-        if(head_angle >=350)
+          t.angular.z = 0;
+          t.linear.x = 0;
+          driveVectorPub.publish(t);
+        } else if (head_angle >= 90 && head_angle < 180) {
+          q.z = 240;
+          headAnglePub.publish(q);
+        } else if (head_angle >= 180 && head_angle < 270) {
+          q.z = 0;
+          headAnglePub.publish(q);
+        }
+      }
+
+
+        if(head_angle > 320 && head_angle <= 350)
           state = EXPLORE; //probs good enough i guess.
         break;
       /*
