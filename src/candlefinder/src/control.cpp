@@ -105,7 +105,7 @@ int main(int argc, char* argv[]){
         q.z = navAngle;
         headAnglePub.publish(q);
         t.angular.z = navAngle;
-        t.linear.x = 50;
+        t.linear.x = 100;
         if(flame_x > 0) {
           t.linear.x = 0;
           state = FLAME;
