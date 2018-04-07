@@ -15,6 +15,9 @@ std::vector<int8_t> nav_map(1,-1);
 nav_msgs::MapMetaData info;
 geometry_msgs::Pose pose;
 
+int OFFEST = 2;
+int ANGULAR_OFFSET = 10;
+
 int robot_row = 0;
 int robot_col=0;
 
@@ -146,9 +149,42 @@ int main(int argc, char* argv[]){
               newVector.position = pose.position;
               newVector.orientation = toQuaternion(0, 0, angle);
               if(vectors.size() == 0){
+                int length_L = 0;
+                int START_X_L = round(start_X + OFFEST * cos(angle-M_PI/2));
+                int START_Y_L = round(start_Y + OFFEST * sin(angle-M_PI/2));
+                for(length_L = 0; length_L < 100; length_L++){
+                  int x = round(START_X_L + length_L * cos(angle-(ANGULAR_OFFSET/57.2958)));
+                  int y = round(START_Y_L + length_L * sin(angle-(ANGULAR_OFFSET/57.2958)));
+                  if(x > 0 && y > 0 && x < info.width && y < info.height) {
+                    if(cost_map[x*info.width+y] == 99) break;
+                  } else break;
+                }
+
+                int length_R = 0;
+                int START_X_L = round(start_X + OFFEST * cos(angle+M_PI/2));
+                int START_Y_L = round(start_Y + OFFEST * sin(angle+M_PI/2));
+                for(length_L = 0; length_L < 100; length_L++){
+                  int x = round(START_X_L + length_L * cos(angle+(ANGULAR_OFFSET/57.2958)));
+                  int y = round(START_Y_L + length_L * sin(angle+(ANGULAR_OFFSET/57.2958)));
+                  if(x > 0 && y > 0 && x < info.width && y < info.height) {
+                    if(cost_map[x*info.width+y] == 99) break;
+                  } else break;
+                }
+
                 std_msgs::Int16 msg;
                 int globalTargetAngle = ((int)(-(angle*57.295779-90)+360)%360);
                 int targetAngle = (globalTargetAngle - robotAngle + 360) % 360;
+
+
+                if(length_L > length_R + 2 && length_L > 2) {
+                  //go a little to the left
+                  targetAngle -= ANGULAR_OFFSET;
+                } else if(length_R > length_L + 2 && length_R > 2) {
+                  //go a little to the right
+                  targetAngle += ANGULAR_OFFSET;
+                }
+
+
                 msg.data = targetAngle;
                 exploration_target_angle_pub.publish(msg);
                 //ROS_INFO_STREAM("robot angle: " << robotAngle << "deg, global target angle: " << globalTargetAngle << "deg");
