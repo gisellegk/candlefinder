@@ -86,6 +86,13 @@ __msg.data__: An array of integers
 - 50 = right-angle only path
 - 100 = path to be followed
 
+### navGoal
+Published by:
+Subscribed to by: navigation_node (navigation.cpp)
+Message Type: geometry_msgs::Point
+
+__msg.info__: Target for pathfinding algorithim. If set to -1,-1 it is ignored, otherwise, the algorithm trys to find a path to this specific point
+
 ### exploration_target_angle
 Published by: navigation_node (navigation.cpp)
 Subscribed to by: control

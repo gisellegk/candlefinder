@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Point.h>
 #include <geometry_msgs/Quaternion.h>
 #include <nav_msgs/MapMetaData.h>
 #include <std_msgs/Int16.h>
@@ -14,6 +15,7 @@ std::vector<int8_t> nav_map(1,-1);
 
 nav_msgs::MapMetaData info;
 geometry_msgs::Pose pose;
+geometry_msgs::Point navGoal;
 
 int OFFEST = 2;
 int ANGULAR_OFFSET = 20;
@@ -34,6 +36,9 @@ int main(int argc, char* argv[]){
   ros::Subscriber mapSub = nh.subscribe("cost_map", 1000, &saveMap);
   ros::Subscriber camSub = nh.subscribe("camera_scan_map", 1000, &saveCamMap);
   ros::Subscriber poseSub = nh.subscribe("slam_out_pose", 1000, &savePose);
+  ros::Subscriber navGoal = nh.subscribe("naigation_goal", 1000, &saveNavGoal);
+  navGoal.x = -1;
+  navGoal.y = -1;
 
   ros::Rate rate(10); //idk
   ROS_INFO_STREAM("heres the nav map or something");
@@ -60,12 +65,12 @@ int main(int argc, char* argv[]){
         frontier.pop();
         //ROS_INFO_STREAM("camvalhere " << (cam_map[currentPixel] != 1));
         //ROS_INFO_STREAM("cm: " << (float)cost_map[currentPixel]);
-        if((cam_map[currentPixel] != 1 && !stuckInCostMap) || (stuckInCostMap && cost_map[currentPixel] == 0)) {
+        int currentPixel_X = currentPixel/info.width;
+        int currentPixel_Y = currentPixel%info.width;
+        if((currentPixel_X == navGoal.x && currentPixel_Y == navGoal) || (navGoal.x < 0 && navgGoal.y < 0 && ((cam_map[currentPixel] != 1 && !stuckInCostMap) || (stuckInCostMap && cost_map[currentPixel] == 0)))) {
           finalTarget = currentPixel;
         } else {
           m[currentPixel] = 0;
-          int currentPixel_X = currentPixel/info.width;
-          int currentPixel_Y = currentPixel%info.width;
           //brace yourself...
           for(int i = 0; i < 4; i++) {
             int a = 90*i;
@@ -272,23 +277,27 @@ void savePose(const geometry_msgs::PoseStamped& msg){
   robot_col = (int)((pose.position.x / info.resolution) + (info.width/2.0));
 }
 
+void savNavGoal(const geometry_msgs::Point& msg){
+  navGoal = msg;
+}
+
 int XYtoCords(int x, int y) {
   return x*info.width + y;
 }
 
 geometry_msgs::Quaternion toQuaternion(double pitch, double roll, double yaw) {
-	geometry_msgs::Quaternion q;
+  geometry_msgs::Quaternion q;
         // Abbreviations for the various angular functions
-	double cy = cos(yaw * 0.5);
-	double sy = sin(yaw * 0.5);
-	double cr = cos(roll * 0.5);
-	double sr = sin(roll * 0.5);
-	double cp = cos(pitch * 0.5);
-	double sp = sin(pitch * 0.5);
+  double cy = cos(yaw * 0.5);
+  double sy = sin(yaw * 0.5);
+  double cr = cos(roll * 0.5);
+  double sr = sin(roll * 0.5);
+  double cp = cos(pitch * 0.5);
+  double sp = sin(pitch * 0.5);
 
-	q.w = cy * cr * cp + sy * sr * sp;
-	q.x = cy * sr * cp - sy * cr * sp;
-	q.y = cy * cr * sp + sy * sr * cp;
-	q.z = sy * cr * cp - cy * sr * sp;
-	return q;
+  q.w = cy * cr * cp + sy * sr * sp;
+  q.x = cy * sr * cp - sy * cr * sp;
+  q.y = cy * cr * sp + sy * sr * cp;
+  q.z = sy * cr * cp - cy * sr * sp;
+  return q;
 }
