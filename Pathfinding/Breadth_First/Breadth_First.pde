@@ -9,26 +9,28 @@ final int GRAY1 = 3;
 final int PINK = 4;
 final int GREEN = 5;
 final int GRAY2 = 6;
-final color[] COLORS= {color(0), color(255), color(50,50,255), color(100), color(255,105,180), color(50,255,50), color(200)};
+final int RED = 7;
+final color[] COLORS= {color(0), color(255), color(50,50,255), color(100), color(200,95,170), color(50,255,50), color(200), color(255,50,50)};
 
 int MAP_WIDTH = 0;
-int MAP_HIEGHT = 0;
+int MAP_HEIGHT = 0;
 int firstPoint = 0;
 
+int centerDistance = 0;
 
 int[] map; // map array for holding data. data should be a color index
 
 ArrayList<Integer> pathPoints = new ArrayList<Integer>(); // List of points on the path.
 ArrayList<PVector> vectors = new ArrayList<PVector>(); // vectors from each pivot on the path. Pivots are not stored though... but 
 //vectors.get(0) is the direction the robot should travel
-PVector currentpose = new PVector(32,32); // actual position of the robot
+PVector currentpose = new PVector(200,200); // actual position of the robot
 PVector targetpose = new PVector(32,32); // target postion set by mouse click
 
 void setup() {
   size(404, 404); // windows size in pixels
   MAP_WIDTH = width/STEP; // set map size = window size / step size
-  MAP_HIEGHT = height/STEP;
-  map = new int[MAP_WIDTH*MAP_HIEGHT]; // set map size and fill with zeros
+  MAP_HEIGHT = height/STEP;
+  map = new int[MAP_WIDTH*MAP_HEIGHT]; // set map size and fill with zeros
   strokeWeight(0);
   rectMode(CENTER);
   frameRate(30);
@@ -39,12 +41,12 @@ void mousePressed() { // called on mouse press
 }
 void draw() { // periodic function. rate is set by frameRate(xx)
 
-  map = new int[MAP_WIDTH*MAP_HIEGHT]; // clear map and fill with zeros
+  map = new int[MAP_WIDTH*MAP_HEIGHT]; // clear map and fill with zeros
   vectors = new ArrayList<PVector>(); // clear vector list
   background(0);
-  genMap2(); // draw gray walls
+  genMap1(); // draw gray walls
   inflate();  // draw the inflated walls in white
-  genMap2(); // redraw the gray walls on top of the white so we can see them.
+  genMap1(); // redraw the gray walls on top of the white so we can see them.
   
   // now we pathfind
   // pathfind(current X, current Y, target X, target Y). These values should be in MAP units, not WINDOW units, so currentpose and targetpose are devided by STEP.
@@ -55,10 +57,11 @@ void draw() { // periodic function. rate is set by frameRate(xx)
   // this overwites the pathPoints with the new optimized path
   // lineOfSight(COLOR Index)
   lineOfSight(PINK);
+  divergeFromWall(RED);
   
   
   // draw all the map data in the window
-  for (int y = 0; y < MAP_HIEGHT; y ++) {
+  for (int y = 0; y < MAP_HEIGHT; y ++) {
     for (int x = 0; x < MAP_WIDTH; x ++) {  
       if(map[x*MAP_WIDTH+y] > 0){
         fill(COLORS[map[x*MAP_WIDTH+y]]); // set the fill color based on the map data
@@ -81,7 +84,7 @@ void draw() { // periodic function. rate is set by frameRate(xx)
     int distance = pathPoints.size(); // distance is the legth of the path in pixels
     
     // set a speed
-    int speed = 5;
+    int speed = 1;
     if(distance < 40) // slow down if closer than 40px
        speed = floor(distance*speed/40.0)+1;
     // now move in the direction that vector.get(0) is pointing
@@ -108,7 +111,7 @@ void drawMapLine(int angle, int x, int y, int length) {
   for (int m = 0; m < length; m ++) {
     int xdraw = round(m*run+x);
     int ydraw = round(m*rise+y);
-    if(!(xdraw < 0 || xdraw > MAP_WIDTH-1 || ydraw < 0 || ydraw> MAP_HIEGHT-1))
+    if(!(xdraw < 0 || xdraw > MAP_WIDTH-1 || ydraw < 0 || ydraw> MAP_HEIGHT-1))
       map[xdraw*MAP_WIDTH + ydraw]=GRAY2;
  }
 }
@@ -207,8 +210,8 @@ void genMap2() {
 }
 
 void inflate() {
-  int [] newmap = new int[MAP_WIDTH*MAP_HIEGHT];
-  for(int i = 0; i < MAP_WIDTH*MAP_HIEGHT; i+=1) {
+  int [] newmap = new int[MAP_WIDTH*MAP_HEIGHT];
+  for(int i = 0; i < MAP_WIDTH*MAP_HEIGHT; i+=1) {
     if(map[i] == GRAY2) {
       newmap[i] = WHITE;
       int currentPixel_X = i/MAP_WIDTH;
@@ -222,7 +225,7 @@ void inflate() {
         for(int m = 1; m < inflateSize+1; m++){
           int next_X = currentPixel_X + rise*m/inflateSize;
           int next_Y = currentPixel_Y + run*m/inflateSize;
-          if(!(next_X < 0 || next_X > MAP_WIDTH-1 || next_Y < 0 || next_Y> MAP_HIEGHT-1)) {
+          if(!(next_X < 0 || next_X > MAP_WIDTH-1 || next_Y < 0 || next_Y> MAP_HEIGHT-1)) {
             newmap[next_X*MAP_WIDTH+next_Y] = WHITE;
           }
         }
@@ -237,7 +240,7 @@ void pathFind(int start, int goal) {
   if(start == 0 || goal ==0 || start == goal) return;
   pathPoints = new ArrayList<Integer>();
   ArrayList<Integer> frontier = new ArrayList<Integer>();
-  int[] cameFrom = new int[MAP_WIDTH*MAP_HIEGHT];
+  int[] cameFrom = new int[MAP_WIDTH*MAP_HEIGHT];
   frontier.add(start);
   cameFrom[frontier.get(0)] = frontier.get(0);
   int finalTarget = -1;
@@ -254,7 +257,7 @@ void pathFind(int start, int goal) {
       
     //}
     else {
-      map[currentPixel] = GRAY1;
+      //map[currentPixel] = GRAY1;
       int currentPixel_X = currentPixel/MAP_WIDTH;
       int currentPixel_Y = currentPixel%MAP_WIDTH;
       for(int i = 0; i < 4; i++) {
@@ -263,7 +266,7 @@ void pathFind(int start, int goal) {
         int run = round(cos(a/57.6));
         int next_X = currentPixel_X + run;
         int next_Y = currentPixel_Y + rise;
-        if(next_X < 0 || next_X > MAP_WIDTH-1 || next_Y < 0 || next_Y> MAP_HIEGHT-1) continue;
+        if(next_X < 0 || next_X > MAP_WIDTH-1 || next_Y < 0 || next_Y> MAP_HEIGHT-1) continue;
         int next =next_X*MAP_WIDTH+next_Y;
         if(cameFrom[next] == 0) {
           if(map[next] != WHITE || escape) {
@@ -279,14 +282,73 @@ void pathFind(int start, int goal) {
     int linePos = finalTarget;
     do{
       pathPoints.add(0,linePos);
-      map[linePos] = BLUE;
+      //map[linePos] = BLUE;
       linePos = cameFrom[linePos];
     } while(linePos != start);
     pathPoints.add(0,start);
-    map[linePos] = BLUE;
+    //map[linePos] = BLUE;
   }
   
 }
+void divergeFromWall(int drawColor) {
+  if(vectors.size() > 0) {
+    float angle = atan(vectors.get(0).y/vectors.get(0).x);
+    if(vectors.get(0).x > 0 && vectors.get(0).y > 0) {
+      //first quadrant
+    } else if(vectors.get(0).x < 0 && vectors.get(0).y > 0) {
+      //second quadrant
+      angle+=PI;
+    } else if(vectors.get(0).x < 0 && vectors.get(0).y <= 0) {
+      //third quadrant
+      angle+=PI;
+    } else if(vectors.get(0).x > 0 && vectors.get(0).y <= 0) {
+      //fourth quadrant
+      angle+=2*PI;
+    }
+
+    int OFFEST = 2;
+    int degOFFSET = 10;
+
+    int length_L = 0;
+    int START_X_L = round(pathPoints.get(0)/MAP_WIDTH + OFFEST * cos(angle-PI/2));
+    int START_Y_L = round(pathPoints.get(0)%MAP_WIDTH + OFFEST * sin(angle-PI/2));
+    if(START_X_L > 0 && START_Y_L > 0 && START_X_L < MAP_WIDTH && START_Y_L < MAP_HEIGHT) {
+      for(length_L = 0; length_L < 100; length_L++){
+        int x = round(START_X_L + length_L * cos(angle-(degOFFSET/57.2958)));
+        int y = round(START_Y_L + length_L * sin(angle-(degOFFSET/57.2958)));
+        if(x > 0 && y > 0 && x < MAP_WIDTH && y < MAP_HEIGHT) {
+          if(map[x*MAP_WIDTH+y] == WHITE || map[x*MAP_WIDTH+y] == GRAY2) break;
+          //map[x*MAP_WIDTH+y] = drawColor;
+        } else break;
+      }
+    }
+    
+    int length_R = 0;
+    int START_X_R = round(pathPoints.get(0)/MAP_WIDTH + OFFEST * cos(angle+PI/2));
+    int START_Y_R = round(pathPoints.get(0)%MAP_WIDTH + OFFEST * sin(angle+PI/2));
+    if(START_X_R > 0 && START_Y_R > 0 && START_X_R < MAP_WIDTH && START_Y_R < MAP_HEIGHT) {
+      for(length_R = 0; length_R < 100; length_R++){
+        int x = round(START_X_R + length_R * cos(angle+(degOFFSET/57.2958)));
+        int y = round(START_Y_R + length_R * sin(angle+(degOFFSET/57.2958)));
+        if(x > 0 && y > 0 && x < MAP_WIDTH && y < MAP_HEIGHT) {
+          if(map[x*MAP_WIDTH+y] == WHITE || map[x*MAP_WIDTH+y] == GRAY2) break;
+          //map[x*MAP_WIDTH+y] = drawColor;
+        } else break;
+      }
+    }
+    
+    if(length_L > length_R + 2 && length_L > 2) {
+      //go a little to the left
+      vectors.set(0,new PVector(cos(angle-(degOFFSET/57.2958)), sin(angle-(degOFFSET/57.2958))));
+    } else if(length_R > length_L + 2 && length_R > 2) {
+      //go a little to the right
+      vectors.set(0,new PVector(cos(angle+(degOFFSET/57.2958)), sin(angle+(degOFFSET/57.2958))));
+    } else {
+    }
+    
+  }
+}
+  
 void lineOfSight(int drawColor) {
   if(pathPoints.size()>0) {
     ArrayList<Integer> newPathPoints = new ArrayList<Integer>();
@@ -318,7 +380,7 @@ void lineOfSight(int drawColor) {
         for(int m = 0; m < distance+1; m++){
           int x = round(start_X + m * cos(angle));
           int y = round(start_Y + m * sin(angle));
-          if(x < 0 ||  x> MAP_WIDTH-1 || y < 0 || y> MAP_HIEGHT-1) continue;
+          if(x < 0 ||  x> MAP_WIDTH-1 || y < 0 || y> MAP_HEIGHT-1) continue;
           if(map[x*MAP_WIDTH+y]  == 1) {
             break;
           } else {
@@ -327,6 +389,7 @@ void lineOfSight(int drawColor) {
           }
         }
         if(lineofsight) {
+          if(vectors.size() == 0) centerDistance = distance;
           vectors.add(new PVector(cos(angle), sin(angle)));
           for(int m = 0; m < distance; m++){
             int x = round(start_X + m* cos(angle));
