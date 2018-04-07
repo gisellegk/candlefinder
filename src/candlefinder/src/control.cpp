@@ -86,7 +86,9 @@ int main(int argc, char* argv[]){
       geometry_msgs::Twist t;
       geometry_msgs::Quaternion q;
       int angleDiff;
-      int offset;
+      int diffFromCenter;
+      int thresh = 1;
+
       double currentTime = ros::Time::now().toSec();
       switch(state){
       //Search & extinguish sequence goes here
@@ -146,7 +148,26 @@ int main(int argc, char* argv[]){
         Wiggle the head a little bit for like 5 seconds maybe if it's negative. Move back to EXPLORE if heat sensor is still negative.
       */
       case FLAME:
+      // x values range from 0 to 60.
+      // This is positive if the flame is to the left of the robot.
+      // head will turn CCW if +, CW if -
+      diffFromCenter = 30 - flame_x;
+      thresh = 2; // a deadly disease
 
+      if(diffFromCenter > thresh || diffFromCenter < -thresh) {
+        // didnt feel like importing cmath
+        angleDiff = diffFromCenter*38/60;
+        q.z = head_angle + angleDiff;
+        if(flame_x != -1) {
+          t.angular.z = q.z;
+          t.linear.x = 0;
+          headAnglePub.publish(q);
+          driveVectorPub.publish(t);
+        }
+      } else {
+        // Candle is within threshhold of center of FLIR
+        ROS_INFO_STREAM("candle centered");
+      }
 
         break;
       /*
