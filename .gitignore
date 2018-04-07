@@ -5,3 +5,4 @@ src/hector_navigation
 src/hector_slam
 src/rplidar_ros
 src/costmap_2d
+src/serial
