@@ -5,6 +5,7 @@
 #include <geometry_msgs/Quaternion.h>
 #include <nav_msgs/MapMetaData.h>
 #include <std_msgs/Int16.h>
+#include <std_msgs/Bool.h>
 #include <queue>
 #include "navigation.h"
 #include <math.h>
@@ -16,6 +17,7 @@ std::vector<int8_t> nav_map(1,-1);
 nav_msgs::MapMetaData info;
 geometry_msgs::Pose pose;
 geometry_msgs::Point navGoal;
+ros::Publisher nav_goal_map_pub;
 
 int OFFEST = 2;
 int ANGULAR_OFFSET = 20;
@@ -31,7 +33,9 @@ int main(int argc, char* argv[]){
   ros::init(argc, argv, "navigation_node");
   ros::NodeHandle nh;
 
+  nav_goal_map_pub = nh.advertise<nav_msgs::OccupancyGrid>("nav_goal_map", 1000);
   ros::Publisher nav_map_pub = nh.advertise<nav_msgs::OccupancyGrid>("nav_map", 1000);
+  ros::Publisher are_we_there_yet_pub = nh.advertise<std_msgs::Bool>("are_we_there_yet", 1000);
   ros::Publisher exploration_target_angle_pub = nh.advertise<std_msgs::Int16>("exploration_target_angle", 1000);
   ros::Subscriber mapSub = nh.subscribe("cost_map", 1000, &saveMap);
   ros::Subscriber camSub = nh.subscribe("camera_scan_map", 1000, &saveCamMap);
@@ -52,6 +56,7 @@ int main(int argc, char* argv[]){
     std::vector<int> pathPoints;
     std::vector<geometry_msgs::Pose> vectors;
     int robotPos = info.width*robot_row+robot_col;
+    int numberOfPathPoints = 0;
     if(nav_map.size() != 1 && cam_map.size() != 1 &&  robotPos > 0) {
       bool stuckInCostMap = (cost_map[robotPos] == 99);
       //ROS_INFO_STREAM("Stuck in costmap: " << stuckInCostMap);
@@ -79,7 +84,7 @@ int main(int argc, char* argv[]){
             int next = XYtoCords(currentPixel_X + run, currentPixel_Y + rise);
             if(came_from[next] == -1) {
               //ROS_INFO_STREAM("cm: " << (float)cost_map[next]);
-              if(cost_map[next] <= 50 && cost_map[next] >= 0 || (stuckInCostMap && nav_map[next] < 50)) {
+              if(cost_map[next] <= 50 && cost_map[next] >= 0 || (stuckInCostMap && cost_map[next] < 100)) {
                 frontier.push(next);
               }
               came_from[next] = currentPixel;
@@ -98,7 +103,7 @@ int main(int argc, char* argv[]){
         } while(linePos != robotPos);
       }
 
-      int numberOfPathPoints = pathPoints.size();
+      numberOfPathPoints = pathPoints.size();
       if(numberOfPathPoints > 1) {
         std::vector<uint16_t> newPathPoints;
         int s = 0;
@@ -240,17 +245,21 @@ int main(int argc, char* argv[]){
 
       }
     }
+
+    std_msgs::Bool donee;
+    donee.data = !(numberOfPathPoints > 1);
+
     nav_msgs::OccupancyGrid c;
     c.data = m;
     c.info = info;
     nav_map_pub.publish(c);
+    are_we_there_yet_pub.publish(donee);
     //std_msgs::UInt16MultiArray p;
     //p.data = pathPoints;
     //path_plan_pub.publish(p);
     ros::spinOnce();
     rate.sleep();
   }
-
 }
 
 void saveMap(const nav_msgs::OccupancyGrid& msg){
@@ -278,9 +287,11 @@ void savePose(const geometry_msgs::PoseStamped& msg){
 }
 
 void saveNavGoal(const geometry_msgs::Point& msg) {
+  std::vector<int8_t> m(info.width*info.height,-1);// = nav_map;
   int goalPos = XYtoCords(msg.x, msg.y);
   if(cost_map[goalPos] != 99 && nav_map[goalPos] < 50) {
     navGoal = msg;
+    m[XYtoCords(msg.x, msg.y)] = 60;
   } else {
     // we have to find a valid goal first....
     int finalTarget = -1;
@@ -297,6 +308,7 @@ void saveNavGoal(const geometry_msgs::Point& msg) {
         if(cost_map[currentPixel] == 0) {
           finalTarget = currentPixel;
         } else {
+          m[XYtoCords(msg.x, msg.y)] = 0;
           //brace yourself...
           for(int i = 0; i < 4; i++) {
             int a = 90*i;
@@ -304,7 +316,7 @@ void saveNavGoal(const geometry_msgs::Point& msg) {
             int run = round(cos(a/57.6)); // hah radians
             int next = XYtoCords(currentPixel_X + run, currentPixel_Y + rise);
             if(came_from[next] == -1) {
-              if(nav_map[next] < 50) { // make sure the next point isnt in a wall
+              if(cost_map[next] < 100) { // make sure the next point isnt in a wall
                 frontier.push(next);
               }
               came_from[next] = currentPixel;
@@ -313,8 +325,18 @@ void saveNavGoal(const geometry_msgs::Point& msg) {
         }
       }
       if(finalTarget != -1) {
+        int linePos = finalTarget;
+        do {
+          m[linePos] = 50;
+          linePos = came_from[linePos];
+        } while(linePos != goalPos  );
         navGoal.x = finalTarget/info.width;
         navGoal.y = finalTarget%info.width;
+        nav_msgs::OccupancyGrid c;
+        c.data = m;
+        c.info = info;
+        nav_goal_map_pub.publish(c);
+        m[XYtoCords(navGoal.x, navGoal.y)] = 60;
         return;
       }
   }

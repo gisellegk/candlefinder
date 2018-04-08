@@ -20,6 +20,7 @@ std::vector<int8_t> m;
 int robotPos = -1;
 int candlePos = -1;
 
+bool areWeThereYet = false;
 bool start = false;
 int flame_x = -1;
 int flame_y = -1;
@@ -69,6 +70,10 @@ void saveNavAngle(const std_msgs::Int16& msg) {
   navAngle = msg.data;
 }
 
+void saveAreWeThereYet(const std_msgs::Bool msg) {
+  areWeThereYet = msg.data;
+}
+
 void saveFlameCoord(const geometry_msgs::Point& msg){
   flame_x = msg.x;
   flame_y = msg.y;
@@ -102,8 +107,10 @@ int main(int argc, char* argv[]){
   ros::Publisher headAnglePub = nh.advertise<geometry_msgs::Quaternion>("target_head_angle", 1000);
   ros::Publisher driveVectorPub = nh.advertise<geometry_msgs::Twist>("drive_vector", 1000);
   ros::Publisher navGoalPub = nh.advertise<geometry_msgs::Point>("navigation_goal", 1000);
+  ros::Publisher extinguishPub = nh.advertise<std_msgs::Bool>("extinguish", 1000);
 
   ros::Subscriber currentHeadAngleSub = nh.subscribe("current_head_angle", 1000, &saveCurrentHeadAngle);
+  ros::Subscriber areWeThereYetSub = nh.subscribe("are_we_there_yet", 1000, &saveAreWeThereYet);
   ros::Subscriber basePoseSub = nh.subscribe("base_pose", 1000, &saveBasePose);
   ros::Subscriber slamPoseSub = nh.subscribe("slam_out_pose", 1000, &saveSlamPose);
   ros::Subscriber navAngleSub = nh.subscribe("exploration_target_angle", 1000, &saveNavAngle);
@@ -292,37 +299,46 @@ int main(int argc, char* argv[]){
         if(!destination){
           ROS_INFO_STREAM("searching....");
 
-          float rise = sin(candle_angle/57.6);
-          float run = cos(candle_angle/57.6); // hah radians
+
+          float rise = sin(-(candle_angle+base_angle)/57.6);
+          float run = cos(-(candle_angle+base_angle)/57.6); // hah radians
 
           int currentPixel = robotPos;
           int i = 1;
 
           //FOR EACH PIXEL IN THIS LINE
-          while(m[currentPixel] < 50 /* not a wall*/) {
+          while(m[currentPixel] < 50 /* not a wall*/ && i < info.width * info.height) {
             candlePos = currentPixel;
-            currentPixel = robotPos + (int)((info.width*round(i * run) + round(i*rise)));
-            ROS_INFO_STREAM("robot index: " << robotPos);
-            ROS_INFO_STREAM("current pixel: " << currentPixel);
-            if(m[currentPixel] > 50 /*in a wall*/){
-              //save point
-              ROS_INFO_STREAM("candle location: " << candlePos);
-              destination = true;
-            } else i++;
+            currentPixel = robotPos - (int)((info.width*round(i * run) + round(i*rise)));
+            //ROS_INFO_STREAM("robot index: " << robotPos);
+            //ROS_INFO_STREAM("current pixel: " << currentPixel);
+            if(currentPixel > 0 && currentPixel < info.width * info.height) {
+              if(m[currentPixel] > 50 /*in a wall*/){
+                //save point
+                ROS_INFO_STREAM("candle angle: " << candle_angle);
+                ROS_INFO_STREAM("base angle: " << base_angle);
+                destination = true;
+              } else i++;
+            } else {
+              ROS_INFO_STREAM("current pixel out of range");
+            }
           }
-
-        } else {
-          //find closest valid point & publish goal
-          if(m[candlePos] < 99 /* valid point */){
+          if(destination) {
             geometry_msgs::Point newGoalPlz;
             newGoalPlz.x = candlePos/WIDTH;
             newGoalPlz.y = candlePos%WIDTH;
             navGoalPub.publish(newGoalPlz);
           } else {
-            //adjust candlePos
             navGoalPub.publish(nullGoal);
           }
-
+        } else {
+          t.angular.z = navAngle;
+          t.linear.x = 50;
+          if(areWeThereYet) {
+            t.linear.x = 0;
+            state = EXTINGUISH;
+          }
+          driveVectorPub.publish(t);
         }
         break;
 
@@ -332,7 +348,31 @@ int main(int argc, char* argv[]){
 
         */
         case EXTINGUISH:
+        diffFromCenter = 30 - flame_x;
+        thresh = 2; // a deadly disease
+
+        if(diffFromCenter > thresh || diffFromCenter < -thresh) {
+          // didnt feel like importing cmath
+          angleDiff = diffFromCenter*40/60;
+          q.z = head_angle + angleDiff;
+          if(flame_x != -1) {
+            t.angular.z = q.z;
+            t.linear.x = 0;
+            headAnglePub.publish(q);
+            driveVectorPub.publish(t);
+          }
+        } else {
+          // Candle is within threshhold of center of FLIR
+          ROS_INFO_STREAM("candle centered");
+          candle_angle = head_angle;
+          ROS_INFO_STREAM("extinguish plz");
+          std_msgs::Bool ext;
+          ext.data = true;
+          extinguishPub.publish(ext);
+        }
+
         break;
+
       }
 
     }

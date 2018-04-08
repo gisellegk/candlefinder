@@ -108,7 +108,7 @@ int main(int argc, char* argv[]){
     //ROS_INFO_STREAM(msg);
     int strLength = msg.length();
 
-    if(strLength >= 2) {
+    if(strLength > 3) {
       if(msg.at(0) == 'r') {
         if(msg.at(1) == 'a') {
           int newDriveAngle = std::stoi(msg.substr(2, strLength), &sz);
