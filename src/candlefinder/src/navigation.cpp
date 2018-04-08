@@ -79,7 +79,7 @@ int main(int argc, char* argv[]){
             int next = XYtoCords(currentPixel_X + run, currentPixel_Y + rise);
             if(came_from[next] == -1) {
               //ROS_INFO_STREAM("cm: " << (float)cost_map[next]);
-              if(cost_map[next] <= 50 && cost_map[next] >= 0 || (stuckInCostMap)) {
+              if(cost_map[next] <= 50 && cost_map[next] >= 0 || (stuckInCostMap && map[next] < 50)) {
                 frontier.push(next);
               }
               came_from[next] = currentPixel;
@@ -277,8 +277,47 @@ void savePose(const geometry_msgs::PoseStamped& msg){
   robot_col = (int)((pose.position.x / info.resolution) + (info.width/2.0));
 }
 
-void saveNavGoal(const geometry_msgs::Point& msg){
-  navGoal = msg;
+void savNavGoal(const geometry_msgs::Point& msg) {
+  int goalPos = XYtoCords(msg.x, msg.y);
+  if(cost_map[goalPos] != 99 && map[goalPos] < 50) {
+    navGoal = msg;
+  } else {
+    // we have to find a valid goal first....
+    int finalTarget = -1;
+    std::queue<int> frontier;
+    frontier.push(goalPos);
+    std::vector<int> came_from(info.width*info.height, -1);
+    came_from[robotPos] = goalPos;
+
+    while(frontier.size() > 0 && finalTarget == -1) {
+        int currentPixel = frontier.front();
+        frontier.pop();
+        int currentPixel_X = currentPixel/info.width;
+        int currentPixel_Y = currentPixel%info.width;
+        if(cost_map[currentPixel] == 0) {
+          finalTarget = currentPixel;
+        } else {
+          m[currentPixel] = 0;
+          //brace yourself...
+          for(int i = 0; i < 4; i++) {
+            int a = 90*i;
+            int rise = round(sin(a/57.6));
+            int run = round(cos(a/57.6)); // hah radians
+            int next = XYtoCords(currentPixel_X + run, currentPixel_Y + rise);
+            if(came_from[next] == -1) {
+              if(map[next] < 50) { // make sure the next point isnt in a wall
+                frontier.push(next);
+              }
+              came_from[next] = currentPixel;
+            }
+          }
+        }
+      }
+      if(finalTarget != -1) {
+        navGoal = finalTarget;
+        return;
+      }
+  }
 }
 
 int XYtoCords(int x, int y) {
