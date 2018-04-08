@@ -106,6 +106,7 @@ if (stringComplete) {
         sprintf(buffer, "re%01d", (int)solenoidValue);
         Serial.println(buffer);
         setSolenoid(solenoidValue);
+        digitalWrite(FLAME_LED_PIN, solenoidValue);
       }
     }
     inputString = "";
@@ -132,6 +133,7 @@ if (stringComplete) {
   if(count % 100 == 0) {
     int currentHeadAngle = headEncoder.read() * 360 / HEAD_ENC_PULSES;
     while(currentHeadAngle < 0) currentHeadAngle += 360;
+    currentHeadAngle = currentHeadAngle % 360;
     char buffer[4];
     sprintf(buffer, "rh%03d", currentHeadAngle);
     Serial.println(buffer);
@@ -289,7 +291,7 @@ bool setHeadAngle(int targetAngle) {
       dirCoeff = -1;
     }
     if(abs(targetAngle - currentAngle) < HEAD_THRESHOLD  * 10 || abs(abs(targetAngle - currentAngle)-360) < HEAD_THRESHOLD * 10) {
-      dirCoeff *= 0.2;
+      dirCoeff *= 0.4;
     }
     if(diff < 0) { //  if neg diff less than 180 go ccw
       setHeadMC(dirCoeff * -1);
