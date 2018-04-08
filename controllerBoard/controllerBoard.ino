@@ -111,8 +111,17 @@ if (stringComplete) {
     inputString = "";
     stringComplete = false;
   }
+
+  
   drive(targetBaseAngle, targetSpeed*0.01);
   setHeadAngle(targetHeadAngle);
+
+  if(digitalRead(ALARM_DETECT_PIN)) {
+    Serial.println("rg1");
+  }
+
+
+  
   count++;
   if(count > 1000) {
     count = 0;       
@@ -167,6 +176,8 @@ void homeVectorMotors() {
     vectorEncoder.write(0);
     while(!setVectorAngle(35)) delay(1);
     vectorEncoder.write(0);  
+    setVectorMC(0);
+    delay(500);
 }
 
 void homeHead() {
@@ -183,7 +194,7 @@ void drive(int angle, float velocity) {
   setDriveMC(velocity*setVectorAngle(angle));
 }
 
-int setVectorAngle(int targetAngle) {
+float setVectorAngle(int targetAngle) {
   while(targetAngle <0)
     targetAngle += 360;
   targetAngle = targetAngle % 360;  
@@ -238,9 +249,16 @@ int setVectorAngle(int targetAngle) {
       } else {
         return -1;
       }
-     }
+     }     
+
+    if(abs(currentAngle - targetAngle) <= 2*VECTORING_THRESHOLD || abs(abs(currentAngle - targetAngle) - 360) <= 2*VECTORING_THRESHOLD) {
+      return 0.5;
+    } else if (abs(abs(currentAngle - targetAngle) - 180) <= 2*VECTORING_THRESHOLD) {
+      return -0.5;
+    } else {
+      return 0;
+    }
   }  
-  return 0;
 }
 
 bool setHeadAngle(int targetAngle) {
