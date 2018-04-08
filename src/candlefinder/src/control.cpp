@@ -5,6 +5,7 @@
 #include <std_msgs/Int16.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <cmath>
 
 bool start = false;
 int flame_x = -1;
@@ -14,12 +15,22 @@ int base_angle = 0;
 int slam_angle = 0;
 int navAngle;
 
+int candle_angle;
+bool point_a = false;
+int center_a;
+int flame_a;
+bool point_b = false;
+int center_b;
+int flame_b;
+
 double startTime;
 
 enum STATE {
   CAMSPIN,
   EXPLORE,
   FLAME,
+  TRIANGULATE,
+  APPROACH,
   EXTINGUISH
 };
 
@@ -91,42 +102,40 @@ int main(int argc, char* argv[]){
 
       double currentTime = ros::Time::now().toSec();
       switch(state){
-      //Search & extinguish sequence goes here
-      /*
-      state CAMSPIN:
+        //Search & extinguish sequence goes here
+        /*
+        state CAMSPIN:
         Spin 360 to camscan surrounding area to make sure the fire isn't in starting room.
-      */
-      case CAMSPIN:
-      if(currentTime - startTime < 0.5) {
-        t.angular.z = 0;
-        t.linear.x = 30;
-        driveVectorPub.publish(t);
-      } else {
-        if(head_angle < 90 || head_angle > 350) {
-          q.z = 120;
-          headAnglePub.publish(q);
-
+        */
+        case CAMSPIN:
+        if(currentTime - startTime < 0.5) {
           t.angular.z = 0;
-          t.linear.x = 0;
-          driveVectorPub.publish(t);
-        } else if (head_angle >= 90 && head_angle < 180) {
-          q.z = 240;
-          headAnglePub.publish(q);
-        } else if (head_angle >= 180 && head_angle < 270) {
-          q.z = 0;
-          headAnglePub.publish(q);
+          t.linear.x = 30;
+        } else {
+          if(head_angle < 90 || head_angle > 350) {
+            q.z = 120;
+            t.angular.z = 0;
+            t.linear.x = 0;
+          } else if (head_angle >= 90 && head_angle < 180) {
+            q.z = 240;
+          } else if (head_angle >= 180 && head_angle < 270) {
+            q.z = 0;
+          }
         }
-      }
-
-
+        if(flame_x > 0) {
+          t.linear.x = 0;
+          state = FLAME;
+        }
+        driveVectorPub.publish(t);
+        headAnglePub.publish(q);
         if(head_angle > 320 && head_angle <= 350)
-          state = EXPLORE; //probs good enough i guess.
+        state = EXPLORE; //probs good enough i guess.
         break;
-      /*
-      state EXPLORE:
+        /*
+        state EXPLORE:
         Begin following navigation, camscanning in the direction you are moving
-      */
-      case EXPLORE:
+        */
+        case EXPLORE:
         q.z = navAngle;
         headAnglePub.publish(q);
         t.angular.z = navAngle;
@@ -137,47 +146,113 @@ int main(int argc, char* argv[]){
         }
         driveVectorPub.publish(t);
         break;
-      /*
-      state FLAME:
-        Center camera on flame. Get camera's angle & direct drive base to that angle. Adjust this angle as you drive forward, keeping the flame horizontally centered in the camera.
 
-        Stop driving forward when costmap wall is hit.
+        /*
+        state FLAME:
+        Center camera on flame. Record final head angle position.
+        */
+        case FLAME:
+        // x values range from 0 to 60.
+        // This is positive if the flame is to the left of the robot.
+        // head will turn CCW if +, CW if -
+        diffFromCenter = 30 - flame_x;
+        thresh = 2; // a deadly disease
 
-        Move to EXTINGUISH if heat sensor is positive.
-
-        Wiggle the head a little bit for like 5 seconds maybe if it's negative. Move back to EXPLORE if heat sensor is still negative.
-      */
-      case FLAME:
-      // x values range from 0 to 60.
-      // This is positive if the flame is to the left of the robot.
-      // head will turn CCW if +, CW if -
-      diffFromCenter = 30 - flame_x;
-      thresh = 2; // a deadly disease
-
-      if(diffFromCenter > thresh || diffFromCenter < -thresh) {
-        // didnt feel like importing cmath
-        angleDiff = diffFromCenter*38/60;
-        q.z = head_angle + angleDiff;
-        if(flame_x != -1) {
-          t.angular.z = q.z;
-          t.linear.x = 0;
-          headAnglePub.publish(q);
-          driveVectorPub.publish(t);
+        if(diffFromCenter > thresh || diffFromCenter < -thresh) {
+          // didnt feel like importing cmath
+          angleDiff = diffFromCenter*40/60;
+          q.z = head_angle + angleDiff;
+          if(flame_x != -1) {
+            t.angular.z = q.z;
+            t.linear.x = 0;
+            headAnglePub.publish(q);
+            driveVectorPub.publish(t);
+          }
+        } else {
+          // Candle is within threshhold of center of FLIR
+          ROS_INFO_STREAM("candle centered");
+          candle_angle = head_angle;
+          state = TRIANGULATE;
         }
-      } else {
-        // Candle is within threshhold of center of FLIR
-        ROS_INFO_STREAM("candle centered");
-      }
+        break;
+
+        /*
+        state TRIANGULATE:
+        move the candle as far right as possible on the screen.
+        Record this position, and the x value of the flame.
+
+        move the candle as far left as possible on the screen.
+        Record this position, and the x value of the flame.
+        */
+        case TRIANGULATE:
+        if(!point_a){
+          if (flame_x < 55) {
+            // candle is still on screen
+            // keep turning right
+            flame_a = flame_x;
+            center_a = head_angle;
+            q.z = head_angle + 5;
+            headAnglePub.publish(q);
+            ROS_INFO_STREAM(flame_a);
+          } else {
+            ROS_INFO_STREAM("found point a");
+            point_a = true;
+            q.z = head_angle - 10;
+            headAnglePub.publish(q);
+            ROS_INFO_STREAM(flame_x);
+            //set angle to candle_angle
+          }
+        } else if (!point_b) {
+          if(flame_x > 0 || flame_x == -1) {
+            // candle still on screen
+            // keep turning left
+            flame_b = flame_x;
+            center_b = head_angle;
+            q.z = head_angle - 5;
+            headAnglePub.publish(q);
+            ROS_INFO_STREAM(flame_b);
+          } else {
+            point_b = true;
+            ROS_INFO_STREAM("found point b");
+            ROS_INFO_STREAM(flame_x);
+          }
+        } else {
+          ROS_INFO_STREAM("candle_angle: " << candle_angle);
+          ROS_INFO_STREAM("center_a: " << center_a);
+          ROS_INFO_STREAM("flame_a: " << flame_a);
+          ROS_INFO_STREAM("flame_a deg: " << ((30 - flame_a)*40/60));
+          ROS_INFO_STREAM("center_b: " << center_b);
+          ROS_INFO_STREAM("flame_b: " << flame_b);
+          ROS_INFO_STREAM("flame_b deg: " << ((30 - flame_b)*40/60));
+          ROS_INFO_STREAM("time to do math i guess");
+          int beta = (30 - flame_b)*40/60;
+          int theta_b = abs(center_b - candle_angle);
+          int gamma_b = abs( beta - theta_b);
+          int the_d_cc = 20 * sin((180-beta)/57.296)/sin(abs(beta-abs(center_b - candle_angle))/57.296);
+          
+        }
 
         break;
-      /*
-      state EXTINGUISH:
+
+        /*
+        state APPROACH:
+        Plot calculated candle location.
+        Find closest valid position (not in cost map).
+        Drive to candle, keeping head centered on candle or towards candle when possible.
+
+        Move to EXTINGUISH when path is complete.
+        */
+        case APPROACH:
+        break;
+
+        /*
+        state EXTINGUISH:
         CO2 that shit, Open solenoid and move head back and forth a few degrees
 
-      */
-      case EXTINGUISH:
+        */
+        case EXTINGUISH:
         break;
-    }
+      }
 
     }
     ros::spinOnce();
