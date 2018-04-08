@@ -35,7 +35,7 @@
   <node pkg="candlefinder" type="navigation" name="navigation" />
   <node pkg="candlefinder" type="FLIR_node.py" name="FLIR_node" />
   <node pkg="candlefinder" type="serial_node" name="serial_node" />
-  <node pkg="candlefinder" type="control" name="control" />
+  <!--node pkg="candlefinder" type="control" name="control" /-->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rplidar_ros)/rviz/slam.rviz" />
 
 
