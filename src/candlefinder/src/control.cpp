@@ -7,6 +7,17 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <cmath>
 
+
+#define WIDTH 800
+#define HEIGHT 800
+#define RESOLUTION 0.01
+
+nav_msgs::MapMetaData info;
+std::vector<int8_t> m = hector_map;
+
+int robotPos = -1;
+int candlePos = -1;
+
 bool start = false;
 int flame_x = -1;
 int flame_y = -1;
@@ -23,6 +34,8 @@ bool point_b = false;
 int center_b;
 int flame_b;
 
+bool destination = false;
+
 double startTime;
 
 enum STATE {
@@ -35,6 +48,11 @@ enum STATE {
 };
 
 STATE state;
+
+void saveMap(const nav_msgs::OccupancyGrid& msg){
+  hector_map = msg.data;
+  info = msg.info;
+}
 
 void saveStartBool(const std_msgs::Bool& msg) {
   if(!start && msg.data) {
@@ -70,6 +88,9 @@ void saveSlamPose(const geometry_msgs::PoseStamped& msg) {
   geometry_msgs::Pose pose = msg.pose;
   slam_angle = ((int)round(atan2(2*(pose.orientation.w*pose.orientation.z + pose.orientation.x*pose.orientation.y), 1-2*(pose.orientation.z*pose.orientation.z))*57.3)+360)%360;
 
+  int robot_row = (int)((pose.position.y / RESOLUTION) + (HEIGHT/2.0));
+  int robot_col = (int)((pose.position.x / RESOLUTION) + (WIDTH/2.0));
+  robotPos = WIDTH*robot_row+robot_col;
 }
 
 int main(int argc, char* argv[]){
@@ -78,6 +99,7 @@ int main(int argc, char* argv[]){
 
   ros::Publisher headAnglePub = nh.advertise<geometry_msgs::Quaternion>("target_head_angle", 1000);
   ros::Publisher driveVectorPub = nh.advertise<geometry_msgs::Twist>("drive_vector", 1000);
+  ros::Publisher navGoalPub = nh.advertise<geometry_msgs::Point>("navigation_goal", 1000);
 
   ros::Subscriber currentHeadAngleSub = nh.subscribe("current_head_angle", 1000, &saveCurrentHeadAngle);
   ros::Subscriber basePoseSub = nh.subscribe("base_pose", 1000, &saveBasePose);
@@ -87,10 +109,19 @@ int main(int argc, char* argv[]){
   ros::Subscriber fftSub = nh.subscribe("start_bool", 1000, &saveStartBool);
   ros::Subscriber flameSub = nh.subscribe("candle_loc", 1000, &saveFlameCoord);
 
+  ros::Subscriber mapSub = nh.subscribe("map", 1000, &saveMap);
+
   ros::Rate rate(20); //idk
   ROS_INFO_STREAM("let's do this!!!");
   state = CAMSPIN;
   ROS_INFO_STREAM("state: " << state);
+  info.width = 1;
+  info.height = 1;
+
+  geometry_msgs::Point nullGoal;
+  nullGoal.x = -1;
+  nullGoal.y = -1;
+  navGoalPub.publish(nullGoal);
 
   while(ros::ok()) {
     if(start){
@@ -172,7 +203,7 @@ int main(int argc, char* argv[]){
           // Candle is within threshhold of center of FLIR
           ROS_INFO_STREAM("candle centered");
           candle_angle = head_angle;
-          state = TRIANGULATE;
+          state = APPROACH;
         }
         break;
 
@@ -191,7 +222,7 @@ int main(int argc, char* argv[]){
             // keep turning right
             flame_a = flame_x;
             center_a = head_angle;
-            q.z = head_angle + 5;
+            q.z = head_angle + 2;
             headAnglePub.publish(q);
             ROS_INFO_STREAM(flame_a);
           } else {
@@ -208,7 +239,7 @@ int main(int argc, char* argv[]){
             // keep turning left
             flame_b = flame_x;
             center_b = head_angle;
-            q.z = head_angle - 5;
+            q.z = head_angle - 2;
             headAnglePub.publish(q);
             ROS_INFO_STREAM(flame_b);
           } else {
@@ -220,16 +251,28 @@ int main(int argc, char* argv[]){
           ROS_INFO_STREAM("candle_angle: " << candle_angle);
           ROS_INFO_STREAM("center_a: " << center_a);
           ROS_INFO_STREAM("flame_a: " << flame_a);
-          ROS_INFO_STREAM("flame_a deg: " << ((30 - flame_a)*40/60));
+          ROS_INFO_STREAM("flame_a deg: " << ((30 - flame_a)*40/60.0));
           ROS_INFO_STREAM("center_b: " << center_b);
           ROS_INFO_STREAM("flame_b: " << flame_b);
-          ROS_INFO_STREAM("flame_b deg: " << ((30 - flame_b)*40/60));
+          ROS_INFO_STREAM("flame_b deg: " << ((30 - flame_b)*40/60.0));
           ROS_INFO_STREAM("time to do math i guess");
-          int beta = (30 - flame_b)*40/60;
-          int theta_b = abs(center_b - candle_angle);
-          int gamma_b = abs( beta - theta_b);
+          float beta = (30 - flame_b)*40/60.0;
           int the_d_cc = 20 * sin((180-beta)/57.296)/sin(abs(beta-abs(center_b - candle_angle))/57.296);
-          
+
+          ROS_INFO_STREAM("distance to candle in inches: " << 5.25* sin((180-beta)/57.296)/sin(abs(beta-abs(center_b - candle_angle))/57.296));
+          ROS_INFO_STREAM("distance to candle in pixels: " << 20* sin((180-beta)/57.296)/sin(abs(beta-abs(center_b - candle_angle))/57.296));
+          if(the_d_cc > 40) {
+            int delta_x = the_d_cc - 40 * cos(candle_angle/57.296);
+            int delta_y = the_d_cc - 40 * sin(candle_angle/57.296);
+
+            geometry_msgs::Point newGoalPlz;
+            newGoalPlz.x = robotPos/WIDTH + delta_x;
+            newGoalPlz.y = robotPos%WIDTH + delta_y;
+            //navGoalPub.publish(newGoalPlz);
+          } else {
+            navGoalPub.publish(nullGoal);
+          }
+
         }
 
         break;
@@ -243,6 +286,41 @@ int main(int argc, char* argv[]){
         Move to EXTINGUISH when path is complete.
         */
         case APPROACH:
+        //Cast ray in candle_angle direction until wall is hit
+        if(!destination){
+          ROS_INFO_STREAM("searching....");
+
+          float rise = sin(candle_angle/57.6);
+          float run = cos(candle_angle/57.6); // hah radians
+
+          int currentPixel = robotPos;
+
+          //FOR EACH PIXEL IN THIS LINE
+          while(m[currentPixel] != 100 /* not a wall*/) {
+            currentPixel = robotIndex + (int)((info.width*round(i * run) + round(i*rise)));
+            ROS_INFO_STREAM("robot index: " << robotIndex);
+            ROS_INFO_STREAM("current pixel: " << currentPixel);
+            if(m[currentPixel] == 100 /*in a wall*/){
+              //save point
+              candlePos = currentPixel;
+              ROS_INFO_STREAM("candle location: " << candlePos);
+              destination = true;
+            }
+          }
+
+        } else {
+          //find closest valid point & publish goal
+          if(m[candlePos] < 99 /* valid point */){
+            geometry_msgs::Point newGoalPlz;
+            newGoalPlz.x = candlePos/WIDTH;
+            newGoalPlz.y = candlePos%WIDTH;
+            navGoalPub.publish(newGoalPlz);
+          } else {
+            //adjust candlePos
+            navGoalPub.publish(nullGoal);
+          }
+
+        }
         break;
 
         /*
