@@ -6,6 +6,8 @@
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <cmath>
+#include <nav_msgs/MapMetaData.h>
+#include <nav_msgs/OccupancyGrid.h>
 
 
 #define WIDTH 800
@@ -13,7 +15,7 @@
 #define RESOLUTION 0.01
 
 nav_msgs::MapMetaData info;
-std::vector<int8_t> m = hector_map;
+std::vector<int8_t> m;
 
 int robotPos = -1;
 int candlePos = -1;
@@ -50,7 +52,7 @@ enum STATE {
 STATE state;
 
 void saveMap(const nav_msgs::OccupancyGrid& msg){
-  hector_map = msg.data;
+  m = msg.data;
   info = msg.info;
 }
 
@@ -294,18 +296,19 @@ int main(int argc, char* argv[]){
           float run = cos(candle_angle/57.6); // hah radians
 
           int currentPixel = robotPos;
+          int i = 1;
 
           //FOR EACH PIXEL IN THIS LINE
-          while(m[currentPixel] != 100 /* not a wall*/) {
-            currentPixel = robotIndex + (int)((info.width*round(i * run) + round(i*rise)));
-            ROS_INFO_STREAM("robot index: " << robotIndex);
+          while(m[currentPixel] < 50 /* not a wall*/) {
+            candlePos = currentPixel;
+            currentPixel = robotPos + (int)((info.width*round(i * run) + round(i*rise)));
+            ROS_INFO_STREAM("robot index: " << robotPos);
             ROS_INFO_STREAM("current pixel: " << currentPixel);
-            if(m[currentPixel] == 100 /*in a wall*/){
+            if(m[currentPixel] > 50 /*in a wall*/){
               //save point
-              candlePos = currentPixel;
               ROS_INFO_STREAM("candle location: " << candlePos);
               destination = true;
-            }
+            } else i++;
           }
 
         } else {
