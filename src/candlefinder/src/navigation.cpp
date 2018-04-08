@@ -36,7 +36,7 @@ int main(int argc, char* argv[]){
   ros::Subscriber mapSub = nh.subscribe("cost_map", 1000, &saveMap);
   ros::Subscriber camSub = nh.subscribe("camera_scan_map", 1000, &saveCamMap);
   ros::Subscriber poseSub = nh.subscribe("slam_out_pose", 1000, &savePose);
-  ros::Subscriber navGoal = nh.subscribe("naigation_goal", 1000, &saveNavGoal);
+  ros::Subscriber navGoalSub = nh.subscribe("navigation_goal", 1000, &saveNavGoal);
   navGoal.x = -1;
   navGoal.y = -1;
 
@@ -67,11 +67,11 @@ int main(int argc, char* argv[]){
         //ROS_INFO_STREAM("cm: " << (float)cost_map[currentPixel]);
         int currentPixel_X = currentPixel/info.width;
         int currentPixel_Y = currentPixel%info.width;
-        if((currentPixel_X == navGoal.x && currentPixel_Y == navGoal) || (navGoal.x < 0 && navgGoal.y < 0 && ((cam_map[currentPixel] != 1 && !stuckInCostMap) || (stuckInCostMap && cost_map[currentPixel] == 0)))) {
+        if((currentPixel_X == navGoal.x && currentPixel_Y == navGoal.y) || (navGoal.x < 0 && navGoal.y < 0 && ((cam_map[currentPixel] != 1 && !stuckInCostMap) || (stuckInCostMap && cost_map[currentPixel] == 0)))) {
           finalTarget = currentPixel;
         } else {
           m[currentPixel] = 0;
-          //brace yourself...
+          //brace yourself...savePos
           for(int i = 0; i < 4; i++) {
             int a = 90*i;
             int rise = round(sin(a/57.6));
@@ -277,7 +277,7 @@ void savePose(const geometry_msgs::PoseStamped& msg){
   robot_col = (int)((pose.position.x / info.resolution) + (info.width/2.0));
 }
 
-void savNavGoal(const geometry_msgs::Point& msg){
+void saveNavGoal(const geometry_msgs::Point& msg){
   navGoal = msg;
 }
 
