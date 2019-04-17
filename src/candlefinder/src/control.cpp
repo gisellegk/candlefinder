@@ -8,11 +8,15 @@
 #include <cmath>
 #include <nav_msgs/MapMetaData.h>
 #include <nav_msgs/OccupancyGrid.h>
-
+#include <cstdio>
+#include <cstdlib>
+#include <string>
 
 #define WIDTH 800
 #define HEIGHT 800
 #define RESOLUTION 0.01
+
+FILE *hectorNode;
 
 nav_msgs::MapMetaData info;
 std::vector<int8_t> m;
@@ -59,6 +63,13 @@ void saveMap(const nav_msgs::OccupancyGrid& msg){
 
 void saveStartBool(const std_msgs::Bool& msg) {
   if(!start && msg.data) {
+    std::string cmd = "roslaunch candlefinder starthector.launch";
+    hectorNode = popen(cmd.c_str(), "r");
+    if(hectorNode) {
+      ROS_INFO_STREAM("Hector started");
+    } else {
+      ROS_INFO_STREAM("Hector FAILED to start");
+    }
     ROS_INFO_STREAM("ALARM DETECTED!!! WEEEEOOOOOOOWEEEEOOOO");
     startTime = ros::Time::now().toSec();
     start = true;

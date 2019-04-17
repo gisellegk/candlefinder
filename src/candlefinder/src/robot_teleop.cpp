@@ -99,25 +99,25 @@ void TeleopRobot::keyLoop()
       case KEYCODE_L:
       ROS_INFO_STREAM("LEFT");
       angular_ = 90;
-      linear_ = -.5;
+      linear_ = -50;
       dirty = true;
       break;
       case KEYCODE_R:
       ROS_INFO_STREAM("RIGHT");
       angular_= 90;
-      linear_ = .5;
+      linear_ = 50;
       dirty = true;
       break;
       case KEYCODE_U:
       ROS_INFO_STREAM("forward");
       angular_ = 0;
-      linear_=.5;
+      linear_= 50;
       dirty = true;
       break;
       case KEYCODE_D:
       ROS_INFO_STREAM("backwards");
       angular_= 0;
-      linear_ = -.5;
+      linear_ = -50;
       dirty = true;
       break;
       case KEYCODE_Q:
