@@ -236,6 +236,21 @@ def main():
           """img = raw_to_8bit(data)"""
           data = ((data - 1000) * 10 -50000) * 2
           img=data
+
+          rowCount, colCount = img.shape
+
+          aray = np.zeros(80)
+
+          for i in range(colCount):
+            maxValueInCol = 0
+            for j in range(rowCount):
+              newVal = img[j,i]
+              if newVal > maxValueInCol:
+                maxValueInCol = newVal
+            aray[i] = maxValueInCol
+            img[40,i] = maxValueInCol
+
+
           """display_temperature(img, minVal, minLoc, (255, 0, 0))"""
           display_temperature(img, maxVal, maxLoc, (0, 0, 255))
           if maxVal > 5000:
@@ -250,7 +265,7 @@ def main():
             flameP.y = -1
             pub.publish(flameP)
 
-          imgScaled = cv2.resize(img[:,:], (640, 480))
+          imgScaled = cv2.resize(img[:,:], (480, 640))
           cv2.imshow('Lepton 2.5 Radiometry', imgScaled)
           cv2.waitKey(1)
 
