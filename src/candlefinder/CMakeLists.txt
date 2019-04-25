@@ -120,6 +120,7 @@ link_directories(${OPENCV_LIBRARY_DIRS})
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/candlefinder_node.cpp)
 
+add_executable(heat_map src/heat_map.cpp)
 add_executable(robot_teleop src/robot_teleop.cpp)
 add_executable(camera_scan_map src/camera_scan_map.cpp)
 add_executable(cost_map src/cost_map.cpp)
@@ -142,6 +143,7 @@ add_executable(serial_node src/serial_node.cpp)
 ## Specify libraries to link a library or executable target against
 
 target_link_libraries(robot_teleop ${catkin_LIBRARIES})
+target_link_libraries(heat_map ${catkin_LIBRARIES})
 target_link_libraries(camera_scan_map ${catkin_LIBRARIES})
 target_link_libraries(cost_map ${catkin_LIBRARIES})
 target_link_libraries(navigation ${catkin_LIBRARIES})

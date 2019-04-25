@@ -9,6 +9,7 @@ import Queue
 import platform
 import rospy
 from std_msgs.msg import String
+from std_msgs.msg import Int32MultiArray, MultiArrayDimension
 from geometry_msgs.msg import Point
 
 try:
@@ -194,6 +195,7 @@ def main():
   ctrl = uvc_stream_ctrl()
 
   pub = rospy.Publisher('candle_loc', Point, queue_size=10)
+  pubHeat = rospy.Publisher('heat_array', Int32MultiArray, queue_size=10)
   rospy.init_node('talker', anonymous=True)
   rate = rospy.Rate(10)
 
@@ -234,12 +236,11 @@ def main():
           data = cv2.flip(data, +1)
           minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
           """img = raw_to_8bit(data)"""
-          data = ((data - 1000) * 10 -50000) * 2
           img=data
 
           rowCount, colCount = img.shape
 
-          aray = np.zeros(80)
+          aray = np.zeros(60)
 
           for i in range(colCount):
             maxValueInCol = 0
@@ -248,11 +249,17 @@ def main():
               if newVal > maxValueInCol:
                 maxValueInCol = newVal
             aray[i] = maxValueInCol
-            img[40,i] = maxValueInCol
+            #img[40,i] = maxValueInCol
 
+          heatmsg = Int32MultiArray(data=aray.tolist());
+          heatmsg.layout.dim.append(MultiArrayDimension())
+          heatmsg.layout.dim[0].size = 60;
+          heatmsg.layout.dim[0].stride = 1;
+          pubHeat.publish(heatmsg);
 
-          """display_temperature(img, minVal, minLoc, (255, 0, 0))"""
-          display_temperature(img, maxVal, maxLoc, (0, 0, 255))
+          img = ((img - 1000) * 10 -45000) * 2
+
+          display_temperature(img, maxVal, maxLoc, (255, 255, 255))
           if maxVal > 5000:
             cv2.circle(data, maxLoc, 10, (255, 255, 255), 1)
             flameP = Point()
